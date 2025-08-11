@@ -12,8 +12,8 @@ go.work.sum
 # Build artifacts
 build/
 dist/
-railway
-railway-*
+#railway
+#railway-*
 
 # IDE
 .vscode/
