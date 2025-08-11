@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+
+	igql "github.com/railwayapp/cli/internal/gql"
 )
 
 // StopServiceInstance 尝试停止指定环境下的服务实例（多种 GraphQL 变体容错）
@@ -88,21 +93,72 @@ func (c *Client) StopDeployment(ctx context.Context, deploymentID string) error 
 	return fmt.Errorf("failed to stop deployment %s: backend not supported", deploymentID)
 }
 
-// Down 尝试停止服务实例；失败时退而求其次停止最新部署
-func (c *Client) Down(ctx context.Context, projectID, environmentID, serviceID string) error {
-	// 首选停止服务实例
-	if err := c.StopServiceInstance(ctx, serviceID, environmentID); err == nil {
-		return nil
+// DeleteDeployment 删除部署（对齐 CLI down 子命令行为）
+func (c *Client) DeleteDeployment(ctx context.Context, deploymentID string) error {
+	var resp struct {
+		DeploymentRemove bool `json:"deploymentRemove"`
 	}
-
-	// 列出部署并尝试停止最新一个
-	deps, err := c.ListDeployments(ctx, projectID, environmentID, &serviceID)
-	if err != nil {
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentRemoveMutation, map[string]any{"id": deploymentID}, &resp); err != nil {
 		return err
 	}
-	if len(deps) == 0 {
-		return nil
+	if !resp.DeploymentRemove {
+		return fmt.Errorf("backend refused deployment removal")
 	}
-	// 假设列表顺序为新->旧（若非如此，可做一次反向或选择最新 status 非终态项）
-	return c.StopDeployment(ctx, deps[0].ID)
+	return nil
+}
+
+// Down 删除最近一次成功的部署（参考 internal/commands/down.go 行为）
+func (c *Client) Down(ctx context.Context, projectID, environmentID, serviceID string) error {
+	// 查询部署（需要 createdAt 字段便于排序）
+	var deps igql.DeploymentsResponse
+	vars := map[string]any{
+		"projectId":     projectID,
+		"environmentId": environmentID,
+		"serviceId":     serviceID,
+	}
+	if err := c.gqlClient.Query(ctx, igql.DeploymentsQuery, vars, &deps); err != nil {
+		return err
+	}
+
+	type depNode struct{ ID, Status, CreatedAt string }
+	nodes := make([]depNode, 0, len(deps.Deployments.Edges))
+	for _, ed := range deps.Deployments.Edges {
+		if strings.EqualFold(ed.Node.Status, "SUCCESS") {
+			nodes = append(nodes, depNode{ID: ed.Node.ID, Status: ed.Node.Status, CreatedAt: ed.Node.CreatedAt})
+		}
+	}
+	if len(nodes) == 0 {
+		return fmt.Errorf("no successful deployment found")
+	}
+
+	parse := func(s string) (time.Time, bool) {
+		if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+			return t, true
+		}
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			return t, true
+		}
+		layouts := []string{
+			"2006-01-02T15:04:05.000Z07:00",
+			time.DateTime,
+			time.RFC1123Z,
+		}
+		for _, l := range layouts {
+			if t, err := time.Parse(l, s); err == nil {
+				return t, true
+			}
+		}
+		return time.Time{}, false
+	}
+	sort.Slice(nodes, func(i, j int) bool {
+		ti, okI := parse(nodes[i].CreatedAt)
+		tj, okJ := parse(nodes[j].CreatedAt)
+		if okI && okJ {
+			return ti.After(tj)
+		}
+		return nodes[i].CreatedAt > nodes[j].CreatedAt
+	})
+
+	// 删除最新
+	return c.DeleteDeployment(ctx, nodes[0].ID)
 }

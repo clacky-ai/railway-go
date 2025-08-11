@@ -39,9 +39,101 @@ func NewDomainCommand(cfg *config.Config) *cobra.Command {
 	cmd.Flags().IntVarP(&port, "port", "p", 0, "将自定义域名映射到服务的端口")
 	cmd.Flags().StringVarP(&service, "service", "s", "", "服务ID或名称（默认使用已链接服务）")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "以JSON格式输出")
-	// 子命令: 删除域名
+	// 子命令: 列表与删除
+	cmd.AddCommand(newDomainListCmd(cfg))
 	cmd.AddCommand(newDomainDeleteCmd(cfg))
 	return cmd
+}
+
+func newDomainListCmd(cfg *config.Config) *cobra.Command {
+	var (
+		service string
+		asJSON  bool
+	)
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "列出服务的域名",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runDomainList(cfg, service, asJSON)
+		},
+	}
+	cmd.Flags().StringVarP(&service, "service", "s", "", "服务ID或名称（默认使用已链接服务）")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "以JSON格式输出")
+	return cmd
+}
+
+func runDomainList(cfg *config.Config, serviceArg string, asJSON bool) error {
+	gqlClient, err := client.NewAuthorized(cfg)
+	if err != nil {
+		return fmt.Errorf("请先登录: %w", err)
+	}
+	linked, err := cfg.GetLinkedProject()
+	if err != nil {
+		return err
+	}
+	var proj gql.ProjectResponse
+	if err := gqlClient.Query(context.Background(), gql.ProjectQuery, map[string]any{"id": linked.Project}, &proj); err != nil {
+		return err
+	}
+
+	// 解析服务
+	var serviceID string
+	if s := strings.TrimSpace(serviceArg); s != "" {
+		for _, se := range proj.Project.Services.Edges {
+			if eq(se.Node.ID, s) || eq(se.Node.Name, s) {
+				serviceID = se.Node.ID
+				break
+			}
+		}
+		if serviceID == "" {
+			return fmt.Errorf("未找到服务: %s", s)
+		}
+	} else if linked.Service != nil && *linked.Service != "" {
+		serviceID = *linked.Service
+	} else {
+		return fmt.Errorf("未链接服务，请使用 -s/--service 指定服务ID或名称")
+	}
+
+	// 查询域名
+	var domainsResp struct {
+		Domains struct {
+			ServiceDomains []struct {
+				ID     string `json:"id"`
+				Domain string `json:"domain"`
+			} `json:"serviceDomains"`
+			CustomDomains []struct {
+				ID     string `json:"id"`
+				Domain string `json:"domain"`
+			} `json:"customDomains"`
+		} `json:"domains"`
+	}
+	if err := gqlClient.Query(context.Background(), gql.DomainsQuery, map[string]any{
+		"projectId":     linked.Project,
+		"environmentId": linked.Environment,
+		"serviceId":     serviceID,
+	}, &domainsResp); err != nil {
+		return err
+	}
+
+	if asJSON {
+		b, _ := json.MarshalIndent(domainsResp.Domains, "", "  ")
+		fmt.Println(string(b))
+		return nil
+	}
+
+	total := len(domainsResp.Domains.ServiceDomains) + len(domainsResp.Domains.CustomDomains)
+	if total == 0 {
+		fmt.Println("No domains found")
+		return nil
+	}
+	fmt.Println("Domains:")
+	for _, d := range domainsResp.Domains.CustomDomains {
+		fmt.Printf("- https://%s\n", d.Domain)
+	}
+	for _, d := range domainsResp.Domains.ServiceDomains {
+		fmt.Printf("- https://%s\n", d.Domain)
+	}
+	return nil
 }
 
 func newDomainDeleteCmd(cfg *config.Config) *cobra.Command {
