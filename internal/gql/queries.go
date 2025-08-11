@@ -397,3 +397,49 @@ type UserProjectsFullResponse struct {
 		} `json:"workspaces"`
 	} `json:"me"`
 }
+
+// ProjectTokens GraphQL查询（分页列表）
+const ProjectTokensQuery = `
+query ProjectTokens($projectId: String!, $after: String) {
+  projectTokens(projectId: $projectId, first: 50, after: $after) {
+    edges {
+      cursor
+      node {
+        id
+        name
+        project {
+          id
+          name
+        }
+        environment {
+          id
+          name
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+`
+
+// ProjectTokensResponse 项目令牌列表响应
+type ProjectTokensResponse struct {
+	ProjectTokens struct {
+		Edges []struct {
+			Cursor string `json:"cursor"`
+			Node   struct {
+				ID          string                    `json:"id"`
+				Name        string                    `json:"name"`
+				Project     struct{ ID, Name string } `json:"project"`
+				Environment struct{ ID, Name string } `json:"environment"`
+			} `json:"node"`
+		} `json:"edges"`
+		PageInfo struct {
+			HasNextPage bool    `json:"hasNextPage"`
+			EndCursor   *string `json:"endCursor"`
+		} `json:"pageInfo"`
+	} `json:"projectTokens"`
+}

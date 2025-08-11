@@ -271,3 +271,160 @@ mutation CustomDomainDelete($id: String!) { customDomainDelete(id: $id) }
 const ServiceDomainDeleteMutation = `
 mutation ServiceDomainDelete($id: String!) { serviceDomainDelete(id: $id) }
 `
+
+// ServiceInstanceStop GraphQL变更（input 形式）
+const ServiceInstanceStopMutation = `
+mutation ServiceInstanceStop($input: ServiceInstanceStopInput!) {
+  serviceInstanceStop(input: $input)
+}
+`
+
+// ServiceInstanceStopInput 服务实例停止输入
+type ServiceInstanceStopInput struct {
+	ServiceID     string `json:"serviceId"`
+	EnvironmentID string `json:"environmentId"`
+}
+
+// ServiceInstanceStopResponse 服务实例停止响应
+type ServiceInstanceStopResponse struct {
+	ServiceInstanceStop bool `json:"serviceInstanceStop"`
+}
+
+// ServiceInstanceScale GraphQL变更（input 形式）
+const ServiceInstanceScaleMutation = `
+mutation ServiceInstanceScale($input: ServiceInstanceScaleInput!) {
+  serviceInstanceScale(input: $input)
+}
+`
+
+// ServiceInstanceScaleInput 服务实例缩放输入
+type ServiceInstanceScaleInput struct {
+	ServiceID     string `json:"serviceId"`
+	EnvironmentID string `json:"environmentId"`
+	Replicas      int    `json:"replicas"`
+}
+
+// ServiceInstanceScaleResponse 服务实例缩放响应
+type ServiceInstanceScaleResponse struct {
+	ServiceInstanceScale bool `json:"serviceInstanceScale"`
+}
+
+// ServiceInstanceStopByParams GraphQL变更（参数形式）
+const ServiceInstanceStopByParamsMutation = `
+mutation ServiceInstanceStopByParams($serviceId: String!, $environmentId: String!) {
+  serviceInstanceStop(serviceId: $serviceId, environmentId: $environmentId)
+}
+`
+
+// ServiceInstanceScaleByParams GraphQL变更（参数形式）
+const ServiceInstanceScaleByParamsMutation = `
+mutation ServiceInstanceScaleByParams($serviceId: String!, $environmentId: String!) {
+  serviceInstanceScale(serviceId: $serviceId, environmentId: $environmentId, replicas: 0)
+}
+`
+
+// DeploymentStop GraphQL变更（返回对象）
+const DeploymentStopMutation = `
+mutation DeploymentStop($id: String!) {
+  deploymentStop(id: $id) {
+    id
+    status
+    deploymentStopped
+  }
+}
+`
+
+// DeploymentStopResponse 部署停止响应（对象形式）
+type DeploymentStopResponse struct {
+	DeploymentStop struct {
+		ID                string `json:"id"`
+		Status            string `json:"status"`
+		DeploymentStopped bool   `json:"deploymentStopped"`
+	} `json:"deploymentStop"`
+}
+
+// DeploymentStopSimple GraphQL变更（返回布尔值）
+const DeploymentStopSimpleMutation = `
+mutation DeploymentStopSimple($id: String!) {
+  deploymentStop(id: $id)
+}
+`
+
+// DeploymentStopSimpleResponse 部署停止响应（布尔形式）
+type DeploymentStopSimpleResponse struct {
+	DeploymentStop bool `json:"deploymentStop"`
+}
+
+// DeploymentCancel GraphQL变更
+const DeploymentCancelMutation = `
+mutation DeploymentCancel($id: String!) {
+  deploymentCancel(id: $id)
+}
+`
+
+// DeploymentCancelResponse 部署取消响应
+type DeploymentCancelResponse struct {
+	DeploymentCancel bool `json:"deploymentCancel"`
+}
+
+// DeploymentAbort GraphQL变更
+const DeploymentAbortMutation = `
+mutation DeploymentAbort($id: String!) {
+  deploymentAbort(id: $id)
+}
+`
+
+// DeploymentAbortResponse 部署中止响应
+type DeploymentAbortResponse struct {
+	DeploymentAbort bool `json:"deploymentAbort"`
+}
+
+// ProjectTokenCreate GraphQL变更（input 形式）
+const ProjectTokenCreateMutation = `
+mutation ProjectTokenCreate($input: ProjectTokenCreateInput!) {
+  projectTokenCreate(input: $input)
+}
+`
+
+// ProjectTokenCreateInput 项目令牌创建输入
+type ProjectTokenCreateInput struct {
+	Name          string `json:"name"`
+	ProjectID     string `json:"projectId"`
+	EnvironmentID string `json:"environmentId"`
+}
+
+// ProjectTokenCreateResponse 项目令牌创建响应
+type ProjectTokenCreateResponse struct {
+	ProjectTokenCreate string `json:"projectTokenCreate"`
+}
+
+// ProjectTokenCreateByParams GraphQL变更（参数形式）
+const ProjectTokenCreateByParamsMutation = `
+mutation ProjectTokenCreateByParams($projectId: String!, $environmentId: String!, $name: String!) {
+  projectTokenCreate(projectId: $projectId, environmentId: $environmentId, name: $name)
+}
+`
+
+// ProjectTokenDelete GraphQL变更（直接参数）
+const ProjectTokenDeleteMutation = `
+mutation ProjectTokenDelete($id: String!) {
+  projectTokenDelete(id: $id)
+}
+`
+
+// ProjectTokenDeleteResponse 项目令牌删除响应
+type ProjectTokenDeleteResponse struct {
+	ProjectTokenDelete bool `json:"projectTokenDelete"`
+}
+
+// ProjectTokenDeleteByInput GraphQL变更（input 形式）
+const ProjectTokenDeleteByInputMutation = `
+mutation ProjectTokenDeleteByInput($input: ProjectTokenDeleteInput!) {
+  projectTokenDelete(input: $input)
+}
+`
+
+// ProjectTokenDeleteInput 项目令牌删除输入
+type ProjectTokenDeleteInput struct {
+	ID string `json:"id"`
+}

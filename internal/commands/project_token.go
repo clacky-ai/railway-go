@@ -8,6 +8,7 @@ import (
 
 	"github.com/railwayapp/cli/internal/client"
 	"github.com/railwayapp/cli/internal/config"
+	gql "github.com/railwayapp/cli/internal/gql"
 	"github.com/railwayapp/cli/internal/util"
 	"github.com/spf13/cobra"
 )
@@ -98,37 +99,26 @@ func runProjectTokenCreate(cfg *config.Config, projectID, environmentID, tokenNa
 	}
 
 	// 使用官方形态：projectTokenCreate(input: { name, projectId, environmentId }): String
-	var raw map[string]any
-	input := map[string]any{
-		"name":          tokenName,
-		"projectId":     projectID,
-		"environmentId": environmentID,
+	var resp gql.ProjectTokenCreateResponse
+	input := gql.ProjectTokenCreateInput{
+		Name:          tokenName,
+		ProjectID:     projectID,
+		EnvironmentID: environmentID,
 	}
-	query := "mutation($input:ProjectTokenCreateInput!){ projectTokenCreate(input:$input) }"
-	if err := gqlClient.Mutate(context.Background(), query, map[string]any{"input": input}, &raw); err == nil {
-		if token, ok := raw["projectTokenCreate"].(string); ok && token != "" {
+	if err := gqlClient.Mutate(context.Background(), gql.ProjectTokenCreateMutation, map[string]any{"input": input}, &resp); err == nil {
+		if resp.ProjectTokenCreate != "" {
 			util.PrintSuccess("项目Token已创建")
-			fmt.Printf("Token: %s\n", token)
+			fmt.Printf("Token: %s\n", resp.ProjectTokenCreate)
 			return nil
 		}
 	}
 
 	// 退路：部分后端可能接受参数式（带 name）
-	fallbacks := []struct {
-		query string
-		vars  map[string]any
-		key   string
-	}{
-		{query: "mutation($projectId:String!,$environmentId:String!,$name:String!){ projectTokenCreate(projectId:$projectId, environmentId:$environmentId, name:$name) }", vars: map[string]any{"projectId": projectID, "environmentId": environmentID, "name": tokenName}, key: "projectTokenCreate"},
-	}
-	for _, fb := range fallbacks {
-		raw = map[string]any{}
-		if err := gqlClient.Mutate(context.Background(), fb.query, fb.vars, &raw); err != nil {
-			continue
-		}
-		if v, ok := raw[fb.key].(string); ok && v != "" {
+	var resp2 gql.ProjectTokenCreateResponse
+	if err := gqlClient.Mutate(context.Background(), gql.ProjectTokenCreateByParamsMutation, map[string]any{"projectId": projectID, "environmentId": environmentID, "name": tokenName}, &resp2); err == nil {
+		if resp2.ProjectTokenCreate != "" {
 			util.PrintSuccess("项目Token已创建")
-			fmt.Printf("Token: %s\n", v)
+			fmt.Printf("Token: %s\n", resp2.ProjectTokenCreate)
 			return nil
 		}
 	}
@@ -158,12 +148,8 @@ func runProjectTokenDelete(cfg *config.Config, tokenID string, yes bool) error {
 	}
 
 	// 首选：按schema使用 id 参数
-	type deleteResp struct {
-		ProjectTokenDelete bool `json:"projectTokenDelete"`
-	}
-	var resp deleteResp
-	mutation := "mutation($id:String!){ projectTokenDelete(id:$id) }"
-	if err := gqlClient.Mutate(context.Background(), mutation, map[string]any{"id": tokenID}, &resp); err == nil {
+	var resp gql.ProjectTokenDeleteResponse
+	if err := gqlClient.Mutate(context.Background(), gql.ProjectTokenDeleteMutation, map[string]any{"id": tokenID}, &resp); err == nil {
 		if resp.ProjectTokenDelete {
 			util.PrintSuccess("项目Token已删除")
 			return nil
@@ -171,9 +157,9 @@ func runProjectTokenDelete(cfg *config.Config, tokenID string, yes bool) error {
 	}
 
 	// 退路：部分后端可能使用 input 形式
-	var fbResp deleteResp
-	fbMutation := "mutation($input:ProjectTokenDeleteInput!){ projectTokenDelete(input:$input) }"
-	if err := gqlClient.Mutate(context.Background(), fbMutation, map[string]any{"input": map[string]any{"id": tokenID}}, &fbResp); err == nil {
+	var fbResp gql.ProjectTokenDeleteResponse
+	input := gql.ProjectTokenDeleteInput{ID: tokenID}
+	if err := gqlClient.Mutate(context.Background(), gql.ProjectTokenDeleteByInputMutation, map[string]any{"input": input}, &fbResp); err == nil {
 		if fbResp.ProjectTokenDelete {
 			util.PrintSuccess("项目Token已删除")
 			return nil
@@ -197,35 +183,6 @@ func runProjectTokenList(cfg *config.Config, projectID string) error {
 		return fmt.Errorf("请先登录: %w", err)
 	}
 
-	query := "query($projectId:String!,$after:String){ projectTokens(projectId:$projectId, first:50, after:$after) { edges { cursor node { id name project { id name } environment { id name } } } pageInfo { hasNextPage endCursor } } }"
-
-	type tokenNode struct {
-		ID      string `json:"id"`
-		Name    string `json:"name"`
-		Project struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		} `json:"project"`
-		Environment struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		} `json:"environment"`
-	}
-	type edge struct {
-		Cursor string    `json:"cursor"`
-		Node   tokenNode `json:"node"`
-	}
-	type pageInfo struct {
-		HasNextPage bool    `json:"hasNextPage"`
-		EndCursor   *string `json:"endCursor"`
-	}
-	type resp struct {
-		ProjectTokens struct {
-			Edges    []edge   `json:"edges"`
-			PageInfo pageInfo `json:"pageInfo"`
-		} `json:"projectTokens"`
-	}
-
 	printedHeader := false
 	var after string
 	total := 0
@@ -234,11 +191,11 @@ func runProjectTokenList(cfg *config.Config, projectID string) error {
 			"projectId": projectID,
 			"after":     nullIfEmpty(after),
 		}
-		var r resp
-		if err := gqlClient.Query(context.Background(), query, variables, &r); err != nil {
+		var resp gql.ProjectTokensResponse
+		if err := gqlClient.Query(context.Background(), gql.ProjectTokensQuery, variables, &resp); err != nil {
 			return err
 		}
-		if len(r.ProjectTokens.Edges) == 0 && total == 0 {
+		if len(resp.ProjectTokens.Edges) == 0 && total == 0 {
 			fmt.Println("无Token")
 			return nil
 		}
@@ -246,7 +203,7 @@ func runProjectTokenList(cfg *config.Config, projectID string) error {
 			fmt.Printf("%-36s  %-24s  %-s\n", "ID", "Name", "Environment")
 			printedHeader = true
 		}
-		for _, e := range r.ProjectTokens.Edges {
+		for _, e := range resp.ProjectTokens.Edges {
 			env := e.Node.Environment.Name
 			if strings.TrimSpace(env) == "" {
 				env = e.Node.Environment.ID
@@ -254,10 +211,10 @@ func runProjectTokenList(cfg *config.Config, projectID string) error {
 			fmt.Printf("%-36s  %-24s  %-s\n", e.Node.ID, e.Node.Name, env)
 			total++
 		}
-		if !r.ProjectTokens.PageInfo.HasNextPage || r.ProjectTokens.PageInfo.EndCursor == nil || *r.ProjectTokens.PageInfo.EndCursor == "" {
+		if !resp.ProjectTokens.PageInfo.HasNextPage || resp.ProjectTokens.PageInfo.EndCursor == nil || *resp.ProjectTokens.PageInfo.EndCursor == "" {
 			break
 		}
-		after = *r.ProjectTokens.PageInfo.EndCursor
+		after = *resp.ProjectTokens.PageInfo.EndCursor
 	}
 	return nil
 }

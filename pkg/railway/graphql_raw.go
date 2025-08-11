@@ -19,44 +19,38 @@ func (c *Client) GraphQLMutate(ctx context.Context, mutation string, variables m
 
 // 底层 raw：CreateProjectToken
 func (c *Client) createProjectTokenRaw(ctx context.Context, projectID, environmentID, name string) (string, error) {
-	var raw map[string]any
-	input := map[string]any{"name": name, "projectId": projectID, "environmentId": environmentID}
-	query := "mutation($input:ProjectTokenCreateInput!){ projectTokenCreate(input:$input) }"
-	if err := c.gqlClient.Mutate(ctx, query, map[string]any{"input": input}, &raw); err == nil {
-		if t, ok := raw["projectTokenCreate"].(string); ok && t != "" {
-			return t, nil
+	var resp igql.ProjectTokenCreateResponse
+	input := igql.ProjectTokenCreateInput{Name: name, ProjectID: projectID, EnvironmentID: environmentID}
+	if err := c.gqlClient.Mutate(ctx, igql.ProjectTokenCreateMutation, map[string]any{"input": input}, &resp); err == nil {
+		if resp.ProjectTokenCreate != "" {
+			return resp.ProjectTokenCreate, nil
 		}
 	}
 	// fallback
-	raw = map[string]any{}
-	q2 := "mutation($projectId:String!,$environmentId:String!,$name:String!){ projectTokenCreate(projectId:$projectId, environmentId:$environmentId, name:$name) }"
-	if err := c.gqlClient.Mutate(ctx, q2, map[string]any{"projectId": projectID, "environmentId": environmentID, "name": name}, &raw); err != nil {
+	var resp2 igql.ProjectTokenCreateResponse
+	if err := c.gqlClient.Mutate(ctx, igql.ProjectTokenCreateByParamsMutation, map[string]any{"projectId": projectID, "environmentId": environmentID, "name": name}, &resp2); err != nil {
 		return "", err
 	}
-	if t, ok := raw["projectTokenCreate"].(string); ok && t != "" {
-		return t, nil
+	if resp2.ProjectTokenCreate != "" {
+		return resp2.ProjectTokenCreate, nil
 	}
 	return "", fmt.Errorf("project token create failed")
 }
 
 // 底层 raw：DeleteProjectToken
 func (c *Client) deleteProjectTokenRaw(ctx context.Context, tokenID string) error {
-	type delResp struct {
-		ProjectTokenDelete bool `json:"projectTokenDelete"`
-	}
-	var r delResp
-	q := "mutation($id:String!){ projectTokenDelete(id:$id) }"
-	if err := c.gqlClient.Mutate(ctx, q, map[string]any{"id": tokenID}, &r); err == nil {
-		if r.ProjectTokenDelete {
+	var resp igql.ProjectTokenDeleteResponse
+	if err := c.gqlClient.Mutate(ctx, igql.ProjectTokenDeleteMutation, map[string]any{"id": tokenID}, &resp); err == nil {
+		if resp.ProjectTokenDelete {
 			return nil
 		}
 	}
-	r = delResp{}
-	q2 := "mutation($input:ProjectTokenDeleteInput!){ projectTokenDelete(input:$input) }"
-	if err := c.gqlClient.Mutate(ctx, q2, map[string]any{"input": map[string]any{"id": tokenID}}, &r); err != nil {
+	var resp2 igql.ProjectTokenDeleteResponse
+	input := igql.ProjectTokenDeleteInput{ID: tokenID}
+	if err := c.gqlClient.Mutate(ctx, igql.ProjectTokenDeleteByInputMutation, map[string]any{"input": input}, &resp2); err != nil {
 		return err
 	}
-	if !r.ProjectTokenDelete {
+	if !resp2.ProjectTokenDelete {
 		return fmt.Errorf("project token delete failed")
 	}
 	return nil
@@ -64,43 +58,21 @@ func (c *Client) deleteProjectTokenRaw(ctx context.Context, tokenID string) erro
 
 // 底层 raw：ListProjectTokens
 func (c *Client) listProjectTokensRaw(ctx context.Context, projectID string) ([]ProjectToken, error) {
-	query := "query($projectId:String!,$after:String){ projectTokens(projectId:$projectId, first:50, after:$after) { edges { cursor node { id name project { id name } environment { id name } } } pageInfo { hasNextPage endCursor } } }"
-	type tokenNode struct {
-		ID          string                    `json:"id"`
-		Name        string                    `json:"name"`
-		Project     struct{ ID, Name string } `json:"project"`
-		Environment struct{ ID, Name string } `json:"environment"`
-	}
-	type edge struct {
-		Cursor string    `json:"cursor"`
-		Node   tokenNode `json:"node"`
-	}
-	type pageInfo struct {
-		HasNextPage bool    `json:"hasNextPage"`
-		EndCursor   *string `json:"endCursor"`
-	}
-	type resp struct {
-		ProjectTokens struct {
-			Edges    []edge   `json:"edges"`
-			PageInfo pageInfo `json:"pageInfo"`
-		} `json:"projectTokens"`
-	}
-
 	after := ""
 	var out []ProjectToken
 	for {
 		vars := map[string]any{"projectId": projectID, "after": nullIfEmpty(after)}
-		var r resp
-		if err := c.gqlClient.Query(ctx, query, vars, &r); err != nil {
+		var resp igql.ProjectTokensResponse
+		if err := c.gqlClient.Query(ctx, igql.ProjectTokensQuery, vars, &resp); err != nil {
 			return nil, err
 		}
-		for _, e := range r.ProjectTokens.Edges {
+		for _, e := range resp.ProjectTokens.Edges {
 			out = append(out, ProjectToken{ID: e.Node.ID, Name: e.Node.Name, ProjectID: e.Node.Project.ID, ProjectName: e.Node.Project.Name, EnvironmentID: e.Node.Environment.ID, EnvironmentName: e.Node.Environment.Name})
 		}
-		if !r.ProjectTokens.PageInfo.HasNextPage || r.ProjectTokens.PageInfo.EndCursor == nil || *r.ProjectTokens.PageInfo.EndCursor == "" {
+		if !resp.ProjectTokens.PageInfo.HasNextPage || resp.ProjectTokens.PageInfo.EndCursor == nil || *resp.ProjectTokens.PageInfo.EndCursor == "" {
 			break
 		}
-		after = *r.ProjectTokens.PageInfo.EndCursor
+		after = *resp.ProjectTokens.PageInfo.EndCursor
 	}
 	return out, nil
 }

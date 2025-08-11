@@ -14,37 +14,33 @@ import (
 // StopServiceInstance 尝试停止指定环境下的服务实例（多种 GraphQL 变体容错）
 func (c *Client) StopServiceInstance(ctx context.Context, serviceID, environmentID string) error {
 	// 优先 input 形式：serviceInstanceStop
-	var raw map[string]any
-	q1 := "mutation($input:ServiceInstanceStopInput!){ serviceInstanceStop(input:$input) }"
-	if err := c.gqlClient.Mutate(ctx, q1, map[string]any{"input": map[string]any{"serviceId": serviceID, "environmentId": environmentID}}, &raw); err == nil {
-		if v, ok := raw["serviceInstanceStop"].(bool); ok && v {
+	var resp igql.ServiceInstanceStopResponse
+	if err := c.gqlClient.Mutate(ctx, igql.ServiceInstanceStopMutation, map[string]any{"input": igql.ServiceInstanceStopInput{ServiceID: serviceID, EnvironmentID: environmentID}}, &resp); err == nil {
+		if resp.ServiceInstanceStop {
 			return nil
 		}
 	}
 
 	// 退路：缩放为 0 副本
-	raw = map[string]any{}
-	q2 := "mutation($input:ServiceInstanceScaleInput!){ serviceInstanceScale(input:$input) }"
-	if err := c.gqlClient.Mutate(ctx, q2, map[string]any{"input": map[string]any{"serviceId": serviceID, "environmentId": environmentID, "replicas": 0}}, &raw); err == nil {
-		if v, ok := raw["serviceInstanceScale"].(bool); ok && v {
+	var scaleResp igql.ServiceInstanceScaleResponse
+	if err := c.gqlClient.Mutate(ctx, igql.ServiceInstanceScaleMutation, map[string]any{"input": igql.ServiceInstanceScaleInput{ServiceID: serviceID, EnvironmentID: environmentID, Replicas: 0}}, &scaleResp); err == nil {
+		if scaleResp.ServiceInstanceScale {
 			return nil
 		}
 	}
 
 	// 退路：参数式 stop
-	raw = map[string]any{}
-	q3 := "mutation($serviceId:String!,$environmentId:String!){ serviceInstanceStop(serviceId:$serviceId, environmentId:$environmentId) }"
-	if err := c.gqlClient.Mutate(ctx, q3, map[string]any{"serviceId": serviceID, "environmentId": environmentID}, &raw); err == nil {
-		if v, ok := raw["serviceInstanceStop"].(bool); ok && v {
+	var paramResp igql.ServiceInstanceStopResponse
+	if err := c.gqlClient.Mutate(ctx, igql.ServiceInstanceStopByParamsMutation, map[string]any{"serviceId": serviceID, "environmentId": environmentID}, &paramResp); err == nil {
+		if paramResp.ServiceInstanceStop {
 			return nil
 		}
 	}
 
 	// 退路：参数式 scale=0
-	raw = map[string]any{}
-	q4 := "mutation($serviceId:String!,$environmentId:String!){ serviceInstanceScale(serviceId:$serviceId, environmentId:$environmentId, replicas:0) }"
-	if err := c.gqlClient.Mutate(ctx, q4, map[string]any{"serviceId": serviceID, "environmentId": environmentID}, &raw); err == nil {
-		if v, ok := raw["serviceInstanceScale"].(bool); ok && v {
+	var paramScaleResp igql.ServiceInstanceScaleResponse
+	if err := c.gqlClient.Mutate(ctx, igql.ServiceInstanceScaleByParamsMutation, map[string]any{"serviceId": serviceID, "environmentId": environmentID}, &paramScaleResp); err == nil {
+		if paramScaleResp.ServiceInstanceScale {
 			return nil
 		}
 	}
@@ -55,37 +51,32 @@ func (c *Client) StopServiceInstance(ctx context.Context, serviceID, environment
 // StopDeployment 尝试停止/取消指定部署（多种 GraphQL 变体容错）
 func (c *Client) StopDeployment(ctx context.Context, deploymentID string) error {
 	// 尝试返回对象形式
-	var obj map[string]any
-	q1 := "mutation($id:String!){ deploymentStop(id:$id) { id status deploymentStopped } }"
-	if err := c.gqlClient.Mutate(ctx, q1, map[string]any{"id": deploymentID}, &obj); err == nil {
-		if v, ok := obj["deploymentStop"].(map[string]any); ok {
-			_ = v
+	var resp igql.DeploymentStopResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentStopMutation, map[string]any{"id": deploymentID}, &resp); err == nil {
+		if resp.DeploymentStop.ID != "" {
 			return nil
 		}
 	}
 
 	// 布尔返回
-	var raw map[string]any
-	q2 := "mutation($id:String!){ deploymentStop(id:$id) }"
-	if err := c.gqlClient.Mutate(ctx, q2, map[string]any{"id": deploymentID}, &raw); err == nil {
-		if v, ok := raw["deploymentStop"].(bool); ok && v {
+	var simpleResp igql.DeploymentStopSimpleResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentStopSimpleMutation, map[string]any{"id": deploymentID}, &simpleResp); err == nil {
+		if simpleResp.DeploymentStop {
 			return nil
 		}
 	}
 
 	// 兼容其他命名
-	raw = map[string]any{}
-	q3 := "mutation($id:String!){ deploymentCancel(id:$id) }"
-	if err := c.gqlClient.Mutate(ctx, q3, map[string]any{"id": deploymentID}, &raw); err == nil {
-		if v, ok := raw["deploymentCancel"].(bool); ok && v {
+	var cancelResp igql.DeploymentCancelResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentCancelMutation, map[string]any{"id": deploymentID}, &cancelResp); err == nil {
+		if cancelResp.DeploymentCancel {
 			return nil
 		}
 	}
 
-	raw = map[string]any{}
-	q4 := "mutation($id:String!){ deploymentAbort(id:$id) }"
-	if err := c.gqlClient.Mutate(ctx, q4, map[string]any{"id": deploymentID}, &raw); err == nil {
-		if v, ok := raw["deploymentAbort"].(bool); ok && v {
+	var abortResp igql.DeploymentAbortResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentAbortMutation, map[string]any{"id": deploymentID}, &abortResp); err == nil {
+		if abortResp.DeploymentAbort {
 			return nil
 		}
 	}
