@@ -185,9 +185,7 @@ func main() {
 - `SerializeVariablesJSON`/`ParseVariablesJSON`、`SerializeVariablesDotenv`/`ParseVariablesDotenv`
 - `SaveVariablesToFile(path, vars)`、`LoadVariablesFromFile(path)`
 
-链接当前目录：
-- `LinkProjectToPath(projectID, environmentID, projectNamePtr, environmentNamePtr)`、`LinkServiceToPath(serviceID)`
-- `UnlinkProjectFromPath()`、`UnlinkServiceFromPath()`、`GetLinkedContext()`
+（已不在库层提供链接当前目录的封装，仍可通过 CLI 使用 link 命令完成本地目录绑定）
 
 幂等与更丰富模型：
 - `EnsureService(ctx, projectID, serviceName, retry)`、`EnsureEnvironment(ctx, projectID, envName, retry)`
