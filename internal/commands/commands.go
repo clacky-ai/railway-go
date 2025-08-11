@@ -33,6 +33,9 @@ func AddAllCommands(rootCmd *cobra.Command, cfg *config.Config) {
 	rootCmd.AddCommand(NewStatusCommand(cfg))
 	rootCmd.AddCommand(NewLogsCommand(cfg))
 
+	// 域名管理命令
+	rootCmd.AddCommand(NewDomainCommand(cfg))
+
 	// 环境变量命令
 	rootCmd.AddCommand(NewVariablesCommand(cfg))
 	rootCmd.AddCommand(NewRunCommand(cfg))

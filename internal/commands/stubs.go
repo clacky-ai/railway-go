@@ -69,19 +69,7 @@ func NewRedeployCommand(cfg *config.Config) *cobra.Command {
 	return cmd
 }
 
-// NewDownCommand 创建下线命令
-func NewDownCommand(cfg *config.Config) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "down",
-		Short: "停止服务",
-		Long:  "停止运行中的服务。",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			util.PrintInfo("停止服务功能正在开发中...")
-			return nil
-		},
-	}
-	return cmd
-}
+// NewDownCommand 在 down.go 中实现
 
 // NewServiceCommand 创建服务管理命令
 // service 命令已在 service.go 中实现

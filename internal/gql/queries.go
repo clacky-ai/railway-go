@@ -221,6 +221,16 @@ type VariablesResponse struct {
 	Variables map[string]*string `json:"variables"`
 }
 
+// Domains 查询
+const DomainsQuery = `
+query Domains($environmentId: String!, $projectId: String!, $serviceId: String!) {
+  domains(environmentId: $environmentId, projectId: $projectId, serviceId: $serviceId) {
+    serviceDomains { id domain }
+    customDomains { id domain }
+  }
+}
+`
+
 // UserProjects（Workspaces）查询
 const UserProjectsQuery = `
 query UserProjects {

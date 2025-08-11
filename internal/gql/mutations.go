@@ -228,3 +228,46 @@ mutation ProjectDelete($id: String!) {
 type ProjectDeleteResponse struct {
 	ProjectDelete bool `json:"projectDelete"`
 }
+
+// DeploymentRemove 删除部署
+const DeploymentRemoveMutation = `
+mutation DeploymentRemove($id: String!) {
+  deploymentRemove(id: $id)
+}
+`
+
+// ServiceDomainCreate 创建服务域名
+const ServiceDomainCreateMutation = `
+mutation ServiceDomainCreate($environmentId: String!, $serviceId: String!) {
+  serviceDomainCreate(input: { environmentId: $environmentId, serviceId: $serviceId }) {
+    id
+    domain
+  }
+}
+`
+
+// CustomDomainCreate 创建自定义域名
+const CustomDomainCreateMutation = `
+mutation CustomDomainCreate($input: CustomDomainCreateInput!) {
+  customDomainCreate(input: $input) {
+    id
+    domain
+    status { dnsRecords { hostlabel fqdn recordType requiredValue currentValue status zone purpose } }
+  }
+}
+`
+
+// CustomDomainAvailable 查询
+const CustomDomainAvailableQuery = `
+query CustomDomainAvailable($domain: String!) { customDomainAvailable(domain: $domain) { available message } }
+`
+
+// CustomDomainDelete 删除自定义域名
+const CustomDomainDeleteMutation = `
+mutation CustomDomainDelete($id: String!) { customDomainDelete(id: $id) }
+`
+
+// ServiceDomainDelete 删除服务域名
+const ServiceDomainDeleteMutation = `
+mutation ServiceDomainDelete($id: String!) { serviceDomainDelete(id: $id) }
+`
