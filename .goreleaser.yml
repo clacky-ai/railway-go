@@ -1,0 +1,84 @@
+project_name: railway-cli
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - main: ./cmd/railway/main.go
+    binary: railway
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+brews:
+  - name: railway
+    homepage: https://github.com/railwayapp/cli
+    description: "Railway CLI - 与Railway基础设施交互"
+    license: MIT
+    repository:
+      owner: railwayapp
+      name: homebrew-tap
+
+nfpms:
+  - id: packages
+    package_name: railway
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: Railway Corp
+    homepage: https://github.com/railwayapp/cli
+    maintainer: Railway <contact@railway.com>
+    description: Railway CLI - 与Railway基础设施交互
+    license: MIT
+    formats:
+      - deb
+      - rpm
+
+dockers:
+  - image_templates:
+      - "ghcr.io/railwayapp/cli:{{ .Tag }}"
+      - "ghcr.io/railwayapp/cli:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=Railway CLI"
+      - "--label=org.opencontainers.image.url=https://github.com/railwayapp/cli"
+      - "--label=org.opencontainers.image.source=https://github.com/railwayapp/cli"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.created={{ time \"2006-01-02T15:04:05Z07:00\" }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
