@@ -1,10 +1,10 @@
-# Railway CLI (Go版本)
+# Railway CLI / Go Library
 
 [![CI](https://github.com/railwayapp/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/cli/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/railwayapp/cli)](https://goreportcard.com/report/github.com/railwayapp/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-这是Railway CLI的Go语言重写版本，提供与原始Rust版本相同的功能。Railway CLI允许你从命令行与Railway平台交互，无需担心复杂的配置。
+这是 Railway CLI 的 Go 版本，同时提供可直接在你代码中调用的库 `pkg/railway`，便于以编程方式访问 Railway（鉴权、项目、服务、变量、部署等）。
 
 ## ✨ 特性
 
@@ -41,7 +41,7 @@ docker pull ghcr.io/railwayapp/cli:latest
 docker run --rm -it ghcr.io/railwayapp/cli:latest --help
 ```
 
-## 🚀 快速开始
+## 🚀 快速开始（CLI）
 
 ### 1. 登录到Railway
 ```bash
@@ -68,7 +68,7 @@ railway up
 railway status
 ```
 
-## 📚 命令参考
+## 📚 命令参考（CLI）
 
 | 命令 | 描述 |
 |------|------|
@@ -115,6 +115,87 @@ make fmt
 ```bash
 make lint
 ```
+
+## 🧰 作为库使用
+
+### 安装
+```bash
+go get github.com/railwayapp/cli@latest
+```
+
+### 示例
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "github.com/railwayapp/cli/pkg/railway"
+)
+
+func main() {
+    ctx := context.Background()
+    // 推荐在 CI 或服务端使用 API Token；若是项目级 token，可使用 WithProjectToken
+    cli, err := railway.New(
+        railway.WithAPIToken("YOUR_API_TOKEN"),
+        railway.WithEnvironment("production"),
+    )
+    if err != nil { panic(err) }
+
+    me, _ := cli.WhoAmI(ctx)
+    fmt.Println("hello,", me.Email)
+
+    proj, _ := cli.GetProject(ctx, "proj_123")
+    vars, _ := cli.GetVariables(ctx, proj.ID, proj.Environments[0].ID, "svc_456")
+    fmt.Println("vars keys:", len(vars))
+
+    depID, logsURL, _ := cli.Up(ctx, railway.UpParams{
+        ProjectID:     proj.ID,
+        EnvironmentID: proj.Environments[0].ID,
+        ServiceID:     "svc_456",
+        ProjectRoot:   "/abs/path/to/project",
+        Verbose:       true,
+        OnBuildLog:    func(s string){ fmt.Println("[build]", s) },
+        OnStatus:      func(s string){ fmt.Println("[status]", s) },
+    })
+    fmt.Println(depID, logsURL)
+}
+```
+
+### 选项
+- `WithAPIToken(token)`：通过 `RAILWAY_API_TOKEN` 注入，适用于用户/团队级 API 令牌
+- `WithProjectToken(token)`：通过 `RAILWAY_TOKEN` 注入，适用于项目访问令牌（project-access-token）
+- `WithEnvironment(env)`：指定后端环境（`production`/`staging`/`dev`）
+
+暴露的主要方法：
+- `WhoAmI(ctx)`、`GetProject(ctx, projectID)`
+- `CreateService(ctx, projectID, name)`、`DeleteService(ctx, serviceID)`
+- `ListServices(ctx, projectID, environmentRef)` 返回 `[]ServiceInEnvironment`
+- `GetVariables(ctx, projectID, environmentID, serviceID)`、`SetVariables(ctx, projectID, environmentID, serviceID, map[string]string)`
+- `ListDeployments(ctx, projectID, environmentID, serviceID *string)`
+- `Up(ctx, UpParams)`：支持 `OnBuildLog`、`OnDeploymentLog`、`OnStatus` 回调
+- `CreateProject(ctx, name, descriptionPtr, teamIDPtr)`、`DeleteProject(ctx, projectID)`、`CreateEnvironment(ctx, projectID, name)`
+- `DeployServiceInstance(ctx, serviceID, environmentID)`、`RedeployDeployment(ctx, deploymentID)`、`DeployTemplate(ctx, projectID, environmentID, templateID, serializedConfig)`
+- `CreateProjectToken(ctx, projectID, environmentID, name)`、`DeleteProjectToken(ctx, tokenID)`、`ListProjectTokens(ctx, projectID)`、`CurrentProjectFromToken(ctx)`
+- `ListWorkspaces(ctx)`、`ListWorkspacesWithProjects(ctx)`
+- `GraphQLQuery` / `GraphQLMutate`、`SubscribeBuildLogs` / `SubscribeDeploymentLogs` / `SubscribeDeploymentStatus`
+
+变量工具：
+- `DiffVariables(current, desired)`、`ApplyVariableDiff(ctx, projectID, environmentID, serviceIDPtr, replace, current, desired)`
+- `SerializeVariablesJSON`/`ParseVariablesJSON`、`SerializeVariablesDotenv`/`ParseVariablesDotenv`
+- `SaveVariablesToFile(path, vars)`、`LoadVariablesFromFile(path)`
+
+链接当前目录：
+- `LinkProjectToPath(projectID, environmentID, projectNamePtr, environmentNamePtr)`、`LinkServiceToPath(serviceID)`
+- `UnlinkProjectFromPath()`、`UnlinkServiceFromPath()`、`GetLinkedContext()`
+
+幂等与更丰富模型：
+- `EnsureService(ctx, projectID, serviceName, retry)`、`EnsureEnvironment(ctx, projectID, envName, retry)`
+- `EnsureVariables(ctx, projectID, environmentID, serviceID, desired, replace, retry)`
+- `EnsureUp(ctx, UpParams, retry)`、`EnsureServiceInstanceDeploy(ctx, serviceID, environmentID, retry)`、`WaitDeploymentSuccess(ctx, deploymentID)`
+- 数据模型：`ServiceInfo`、`ProjectInfo`、`DeploymentInfo`
+
+如需更多 API，请提交 Issue，我们将逐步补齐。
 
 ## 🏗️ 项目结构
 
