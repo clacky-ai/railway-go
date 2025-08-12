@@ -7,14 +7,39 @@ import (
 	igql "github.com/railwayapp/cli/internal/gql"
 )
 
+// DNSRecord DNS记录信息
+type DNSRecord struct {
+	Hostlabel     string `json:"hostlabel"`
+	FQDN          string `json:"fqdn"`
+	RecordType    string `json:"recordType"`
+	RequiredValue string `json:"requiredValue"`
+	CurrentValue  string `json:"currentValue"`
+	Status        string `json:"status"`
+	Zone          string `json:"zone"`
+	Purpose       string `json:"purpose"`
+}
+
+// DomainStatus 域名状态信息
+type DomainStatus struct {
+	DNSRecords []DNSRecord `json:"dnsRecords"`
+}
+
+// CustomDomainResponse 自定义域名创建响应
+type CustomDomainResponse struct {
+	ID     string       `json:"id"`
+	Domain string       `json:"domain"`
+	Status DomainStatus `json:"status"`
+}
+
 type ServiceDomain struct {
 	ID     string
 	Domain string
 }
 
 type CustomDomain struct {
-	ID     string
-	Domain string
+	ID     string        `json:"id"`
+	Domain string        `json:"domain"`
+	Status *DomainStatus `json:"status"`
 }
 
 type Domains struct {
@@ -31,8 +56,9 @@ func (c *Client) ListDomains(ctx context.Context, projectID, environmentID, serv
 				Domain string `json:"domain"`
 			} `json:"serviceDomains"`
 			CustomDomains []struct {
-				ID     string `json:"id"`
-				Domain string `json:"domain"`
+				ID     string        `json:"id"`
+				Domain string        `json:"domain"`
+				Status *DomainStatus `json:"status"`
 			} `json:"customDomains"`
 		} `json:"domains"`
 	}
@@ -48,7 +74,11 @@ func (c *Client) ListDomains(ctx context.Context, projectID, environmentID, serv
 		out.ServiceDomains = append(out.ServiceDomains, ServiceDomain{ID: d.ID, Domain: d.Domain})
 	}
 	for _, d := range resp.Domains.CustomDomains {
-		out.CustomDomains = append(out.CustomDomains, CustomDomain{ID: d.ID, Domain: d.Domain})
+		out.CustomDomains = append(out.CustomDomains, CustomDomain{
+			ID:     d.ID,
+			Domain: d.Domain,
+			Status: d.Status,
+		})
 	}
 	return out, nil
 }
@@ -95,16 +125,18 @@ func (c *Client) CreateCustomDomain(ctx context.Context, projectID, environmentI
 	if targetPort != nil && *targetPort > 0 {
 		input["targetPort"] = *targetPort
 	}
+
 	var resp struct {
-		CustomDomainCreate struct {
-			ID     string `json:"id"`
-			Domain string `json:"domain"`
-		} `json:"customDomainCreate"`
+		CustomDomainCreate CustomDomainResponse `json:"customDomainCreate"`
 	}
 	if err := c.gqlClient.Mutate(ctx, igql.CustomDomainCreateMutation, map[string]any{"input": input}, &resp); err != nil {
 		return CustomDomain{}, err
 	}
-	return CustomDomain{ID: resp.CustomDomainCreate.ID, Domain: resp.CustomDomainCreate.Domain}, nil
+	return CustomDomain{
+		ID:     resp.CustomDomainCreate.ID,
+		Domain: resp.CustomDomainCreate.Domain,
+		Status: &resp.CustomDomainCreate.Status,
+	}, nil
 }
 
 // DeleteDomain 删除服务域名或自定义域名（传入 ID，内部尝试两种删除）

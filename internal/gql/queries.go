@@ -268,7 +268,22 @@ const DomainsQuery = `
 query Domains($environmentId: String!, $projectId: String!, $serviceId: String!) {
   domains(environmentId: $environmentId, projectId: $projectId, serviceId: $serviceId) {
     serviceDomains { id domain }
-    customDomains { id domain }
+    customDomains { 
+      id 
+      domain 
+      status {
+        dnsRecords {
+          hostlabel
+          fqdn
+          recordType
+          requiredValue
+          currentValue
+          status
+          zone
+          purpose
+        }
+      }
+    }
   }
 }
 `
