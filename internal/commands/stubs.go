@@ -107,20 +107,6 @@ func NewStatusCommand(cfg *config.Config) *cobra.Command {
 	return cmd
 }
 
-// NewLogsCommand 创建日志命令
-func NewLogsCommand(cfg *config.Config) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "logs",
-		Short: "查看服务日志",
-		Long:  "查看Railway服务的实时日志。",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			util.PrintInfo("日志查看功能正在开发中...")
-			return nil
-		},
-	}
-	return cmd
-}
-
 // NewVariablesCommand 创建环境变量命令
 // variables 命令已在 variables.go 中实现
 
