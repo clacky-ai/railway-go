@@ -431,3 +431,56 @@ mutation ProjectTokenDeleteByInput($input: ProjectTokenDeleteInput!) {
 type ProjectTokenDeleteInput struct {
 	ID string `json:"id"`
 }
+
+// BackupCreate GraphQL变更
+const BackupCreateMutation = `
+mutation BackupCreate($input: BackupCreateInput!) {
+  backupCreate(input: $input) {
+    id
+    name
+    createdAt
+    status
+  }
+}
+`
+
+// BackupCreateInput 备份创建输入
+type BackupCreateInput struct {
+	ServiceID string `json:"serviceId"`
+	Name      string `json:"name,omitempty"`
+}
+
+// BackupCreateResponse 备份创建响应
+type BackupCreateResponse struct {
+	BackupCreate struct {
+		ID        string `json:"id"`
+		Name      string `json:"name"`
+		CreatedAt string `json:"createdAt"`
+		Status    string `json:"status"`
+	} `json:"backupCreate"`
+}
+
+// BackupRollback GraphQL变更
+const BackupRollbackMutation = `
+mutation BackupRollback($input: BackupRollbackInput!) {
+  backupRollback(input: $input) {
+    id
+    status
+    deploymentId
+  }
+}
+`
+
+// BackupRollbackInput 备份回滚输入
+type BackupRollbackInput struct {
+	BackupID string `json:"backupId"`
+}
+
+// BackupRollbackResponse 备份回滚响应
+type BackupRollbackResponse struct {
+	BackupRollback struct {
+		ID           string `json:"id"`
+		Status       string `json:"status"`
+		DeploymentID string `json:"deploymentId"`
+	} `json:"backupRollback"`
+}

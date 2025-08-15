@@ -500,3 +500,53 @@ type ProjectTokensResponse struct {
 		} `json:"pageInfo"`
 	} `json:"projectTokens"`
 }
+
+// Backups GraphQL查询
+const BackupsQuery = `
+query Backups($serviceId: String!, $after: String) {
+  backups(serviceId: $serviceId, first: 50, after: $after) {
+    edges {
+      cursor
+      node {
+        id
+        name
+        createdAt
+        status
+        size
+        service {
+          id
+          name
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+`
+
+// BackupsResponse 备份列表响应
+type BackupsResponse struct {
+	Backups struct {
+		Edges []struct {
+			Cursor string `json:"cursor"`
+			Node   struct {
+				ID        string `json:"id"`
+				Name      string `json:"name"`
+				CreatedAt string `json:"createdAt"`
+				Status    string `json:"status"`
+				Size      *int64 `json:"size"`
+				Service   struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"service"`
+			} `json:"node"`
+		} `json:"edges"`
+		PageInfo struct {
+			HasNextPage bool    `json:"hasNextPage"`
+			EndCursor   *string `json:"endCursor"`
+		} `json:"pageInfo"`
+	} `json:"backups"`
+}
