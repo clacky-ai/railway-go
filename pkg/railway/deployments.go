@@ -49,3 +49,45 @@ func (c *Client) RedeployDeployment(ctx context.Context, deploymentID string) (i
 	}
 	return resp.DeploymentRedeploy.ID, resp.DeploymentRedeploy.Status, nil
 }
+
+// StopDeploymentSimple 停止部署（简单版本，返回布尔值）
+func (c *Client) StopDeploymentSimple(ctx context.Context, deploymentID string) (bool, error) {
+	var resp igql.DeploymentStopSimpleResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentStopSimpleMutation, map[string]any{"id": deploymentID}, &resp); err != nil {
+		return false, err
+	}
+	return resp.DeploymentStop, nil
+}
+
+// CancelDeployment 取消部署
+func (c *Client) CancelDeployment(ctx context.Context, deploymentID string) (bool, error) {
+	var resp igql.DeploymentCancelResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentCancelMutation, map[string]any{"id": deploymentID}, &resp); err != nil {
+		return false, err
+	}
+	return resp.DeploymentCancel, nil
+}
+
+// AbortDeployment 中止部署
+func (c *Client) AbortDeployment(ctx context.Context, deploymentID string) (bool, error) {
+	var resp igql.DeploymentAbortResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentAbortMutation, map[string]any{"id": deploymentID}, &resp); err != nil {
+		return false, err
+	}
+	return resp.DeploymentAbort, nil
+}
+
+// RemoveDeployment 删除部署
+func (c *Client) RemoveDeployment(ctx context.Context, deploymentID string) error {
+	return c.gqlClient.Mutate(ctx, igql.DeploymentRemoveMutation, map[string]any{"id": deploymentID}, nil)
+}
+
+// ScaleServiceInstance 缩放服务实例
+func (c *Client) ScaleServiceInstance(ctx context.Context, serviceID, environmentID string, replicas int) (bool, error) {
+	input := igql.ServiceInstanceScaleInput{ServiceID: serviceID, EnvironmentID: environmentID, Replicas: replicas}
+	var resp igql.ServiceInstanceScaleResponse
+	if err := c.gqlClient.Mutate(ctx, igql.ServiceInstanceScaleMutation, map[string]any{"input": input}, &resp); err != nil {
+		return false, err
+	}
+	return resp.ServiceInstanceScale, nil
+}

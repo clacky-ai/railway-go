@@ -8,16 +8,23 @@ import (
 
 // TemplateDeployResult 模板部署结果
 type TemplateDeployResult struct {
-	ID   string
-	Name string
+	ProjectID  string
+	WorkflowID string
 }
 
 // DeployTemplate 基于模板进行部署
-func (c *Client) DeployTemplate(ctx context.Context, projectID, environmentID, templateID string, serializedConfig any) (*TemplateDeployResult, error) {
-	input := igql.TemplateDeployInput{ProjectID: projectID, EnvironmentID: environmentID, TemplateID: templateID, SerializedConfig: serializedConfig}
+func (c *Client) DeployTemplate(ctx context.Context, projectID, environmentID, templateID string, serializedConfig igql.SerializedTemplateConfig) (*TemplateDeployResult, error) {
 	var resp igql.TemplateDeployResponse
-	if err := c.gqlClient.Mutate(ctx, igql.TemplateDeployMutation, map[string]any{"input": input}, &resp); err != nil {
+	if err := c.gqlClient.Mutate(ctx, igql.TemplateDeployMutation, map[string]any{
+		"projectId":        projectID,
+		"environmentId":    environmentID,
+		"templateId":       templateID,
+		"serializedConfig": serializedConfig,
+	}, &resp); err != nil {
 		return nil, err
 	}
-	return &TemplateDeployResult{ID: resp.TemplateDeploy.ID, Name: resp.TemplateDeploy.Name}, nil
+	return &TemplateDeployResult{
+		ProjectID:  resp.TemplateDeployV2.ProjectID,
+		WorkflowID: resp.TemplateDeployV2.WorkflowID,
+	}, nil
 }
