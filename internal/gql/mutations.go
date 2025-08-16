@@ -163,28 +163,31 @@ type VariableCollectionUpsertResponse struct {
 
 // TemplateDeploy GraphQL变更
 const TemplateDeployMutation = `
-mutation TemplateDeploy($input: TemplateDeployInput!) {
-  templateDeploy(input: $input) {
-    id
-    name
+mutation TemplateDeploy($projectId: String!, $environmentId: String!, $templateId: String!, $serializedConfig: SerializedTemplateConfig!) {
+  templateDeployV2(input: { projectId: $projectId, environmentId: $environmentId, templateId: $templateId, serializedConfig: $serializedConfig }) {
+    projectId
+    workflowId
   }
 }
 `
 
 // TemplateDeployInput 模板部署输入
 type TemplateDeployInput struct {
-	ProjectID        string      `json:"projectId"`
-	EnvironmentID    string      `json:"environmentId"`
-	TemplateID       string      `json:"templateId"`
-	SerializedConfig interface{} `json:"serializedConfig"`
+	ProjectID        string                   `json:"projectId"`
+	EnvironmentID    string                   `json:"environmentId"`
+	TemplateID       string                   `json:"templateId"`
+	SerializedConfig SerializedTemplateConfig `json:"serializedConfig"`
 }
+
+// SerializedTemplateConfig 序列化模板配置
+type SerializedTemplateConfig map[string]interface{}
 
 // TemplateDeployResponse 模板部署响应
 type TemplateDeployResponse struct {
-	TemplateDeploy struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"templateDeploy"`
+	TemplateDeployV2 struct {
+		ProjectID  string `json:"projectId"`
+		WorkflowID string `json:"workflowId"`
+	} `json:"templateDeployV2"`
 }
 
 // DeploymentRedeploy GraphQL变更

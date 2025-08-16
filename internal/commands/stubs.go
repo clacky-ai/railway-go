@@ -41,20 +41,6 @@ func NewListCommand(cfg *config.Config) *cobra.Command {
 
 // NewUpCommand 在 up.go 中实现
 
-// NewDeployCommand 创建部署命令
-func NewDeployCommand(cfg *config.Config) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "deploy",
-		Short: "部署模板到项目",
-		Long:  "部署Railway模板到你的项目中。",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			util.PrintInfo("模板部署功能正在开发中...")
-			return nil
-		},
-	}
-	return cmd
-}
-
 // NewRedeployCommand 创建重新部署命令
 func NewRedeployCommand(cfg *config.Config) *cobra.Command {
 	cmd := &cobra.Command{
@@ -116,7 +102,7 @@ func NewRunCommand(cfg *config.Config) *cobra.Command {
 		Use:   "run [command]",
 		Short: "使用Railway环境变量运行命令",
 		Long:  "在本地使用Railway环境变量运行指定命令。",
-		Args:  cobra.MinimumNArgs(1),
+		Args:  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			util.PrintInfo("本地运行功能正在开发中...")
 			return nil
@@ -159,7 +145,7 @@ func NewCompletionCommand() *cobra.Command {
 		Use:       "completion [bash|zsh|fish|powershell]",
 		Short:     "生成自动补全脚本",
 		Long:      "生成指定shell的自动补全脚本。",
-		Args:      cobra.ExactValidArgs(1),
+		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		ValidArgs: []string{"bash", "zsh", "fish", "powershell"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			switch args[0] {

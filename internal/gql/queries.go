@@ -1,5 +1,9 @@
 package gql
 
+import (
+	"encoding/json"
+)
+
 // UserMeta GraphQL查询
 const UserMetaQuery = `
 query UserMeta {
@@ -20,6 +24,44 @@ type UserMetaResponse struct {
 		Email  string  `json:"email"`
 		Avatar *string `json:"avatar"`
 	} `json:"me"`
+}
+
+// GitHubRepos 查询（用于解析默认分支）
+const GitHubReposQuery = `
+query GitHubRepos {
+  githubRepos {
+    fullName
+    defaultBranch
+  }
+}
+`
+
+// GitHubReposResponse 响应
+type GitHubReposResponse struct {
+	GitHubRepos []struct {
+		FullName      string `json:"fullName"`
+		DefaultBranch string `json:"defaultBranch"`
+	} `json:"githubRepos"`
+}
+
+// TemplateDetail 查询（用于模板/数据库部署）
+const TemplateDetailQuery = `
+query TemplateDetail($code: String!) {
+  template(code: $code) {
+    id
+    name
+    serializedConfig
+  }
+}
+`
+
+// TemplateDetailResponse 响应（serializedConfig 兼容字符串或对象）
+type TemplateDetailResponse struct {
+	Template struct {
+		ID               string          `json:"id"`
+		Name             string          `json:"name"`
+		SerializedConfig json.RawMessage `json:"serializedConfig"`
+	} `json:"template"`
 }
 
 // Projects GraphQL查询
