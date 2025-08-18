@@ -570,3 +570,127 @@ type WorkflowStatusResponse struct {
 		Status   string  `json:"status"`
 	} `json:"workflowStatus"`
 }
+
+// EnvironmentConfig GraphQL查询
+const EnvironmentConfigQuery = `
+query environmentConfig(
+  $environmentId: String!
+  $decryptVariables: Boolean
+  $decryptPatchVariables: Boolean
+) {
+  environment(id: $environmentId) {
+    id
+    config(decryptVariables: $decryptVariables)
+    serviceInstances {
+      edges {
+        node {
+          ...ServiceInstanceFields
+        }
+      }
+    }
+    volumeInstances {
+      edges {
+        node {
+          ...VolumeInstanceFields
+        }
+      }
+    }
+  }
+  environmentStagedChanges(environmentId: $environmentId) {
+    id
+    createdAt
+    updatedAt
+    status
+    lastAppliedError
+    patch(decryptVariables: $decryptPatchVariables)
+  }
+}
+
+fragment ServiceInstanceFields on ServiceInstance {
+  id
+  isUpdatable
+  serviceId
+  environmentId
+  railpackInfo
+  latestDeployment {
+    ...LatestDeploymentFields
+  }
+}
+
+fragment LatestDeploymentFields on Deployment {
+  id
+  serviceId
+  environmentId
+  createdAt
+  updatedAt
+  statusUpdatedAt
+  status
+  staticUrl
+  suggestAddServiceDomain
+  meta
+}
+
+fragment VolumeInstanceFields on VolumeInstance {
+  id
+  volumeId
+  environmentId
+  serviceId
+  externalId
+  isPendingDeletion
+  state
+  type
+}
+`
+
+// EnvironmentConfigResponse 环境配置响应
+type EnvironmentConfigResponse struct {
+	Environment struct {
+		ID               string          `json:"id"`
+		Config           json.RawMessage `json:"config"`
+		ServiceInstances struct {
+			Edges []struct {
+				Node struct {
+					ID               string          `json:"id"`
+					IsUpdatable      bool            `json:"isUpdatable"`
+					ServiceID        string          `json:"serviceId"`
+					EnvironmentID    string          `json:"environmentId"`
+					RailpackInfo     json.RawMessage `json:"railpackInfo"`
+					LatestDeployment *struct {
+						ID                      string          `json:"id"`
+						ServiceID               string          `json:"serviceId"`
+						EnvironmentID           string          `json:"environmentId"`
+						CreatedAt               string          `json:"createdAt"`
+						UpdatedAt               string          `json:"updatedAt"`
+						StatusUpdatedAt         string          `json:"statusUpdatedAt"`
+						Status                  string          `json:"status"`
+						StaticURL               *string         `json:"staticUrl"`
+						SuggestAddServiceDomain bool            `json:"suggestAddServiceDomain"`
+						Meta                    json.RawMessage `json:"meta"`
+					} `json:"latestDeployment"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"serviceInstances"`
+		VolumeInstances struct {
+			Edges []struct {
+				Node struct {
+					ID                string `json:"id"`
+					VolumeID          string `json:"volumeId"`
+					EnvironmentID     string `json:"environmentId"`
+					ServiceID         string `json:"serviceId"`
+					ExternalID        string `json:"externalId"`
+					IsPendingDeletion bool   `json:"isPendingDeletion"`
+					State             string `json:"state"`
+					Type              string `json:"type"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"volumeInstances"`
+	} `json:"environment"`
+	EnvironmentStagedChanges struct {
+		ID               string          `json:"id"`
+		CreatedAt        string          `json:"createdAt"`
+		UpdatedAt        string          `json:"updatedAt"`
+		Status           string          `json:"status"`
+		LastAppliedError *string         `json:"lastAppliedError"`
+		Patch            json.RawMessage `json:"patch"`
+	} `json:"environmentStagedChanges"`
+}

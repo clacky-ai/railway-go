@@ -12,8 +12,9 @@ import (
 
 // Client 表示GraphQL客户端
 type Client struct {
-	client *graphql.Client
-	config *config.Config
+	client         *graphql.Client
+	config         *config.Config
+	internalClient *graphql.Client
 }
 
 // New 创建新的GraphQL客户端
@@ -25,10 +26,11 @@ func New(cfg *config.Config) (*Client, error) {
 
 	// 创建GraphQL客户端
 	client := graphql.NewClient(cfg.GetBackboardURL(), graphql.WithHTTPClient(httpClient))
-
+	internalClient := graphql.NewClient(cfg.GetBackboardInternalURL(), graphql.WithHTTPClient(httpClient))
 	return &Client{
-		client: client,
-		config: cfg,
+		client:         client,
+		config:         cfg,
+		internalClient: internalClient,
 	}, nil
 }
 
@@ -40,10 +42,12 @@ func NewAuthorized(cfg *config.Config) (*Client, error) {
 	}
 
 	client := graphql.NewClient(cfg.GetBackboardURL(), graphql.WithHTTPClient(httpClient))
+	internalClient := graphql.NewClient(cfg.GetBackboardInternalURL(), graphql.WithHTTPClient(httpClient))
 
 	return &Client{
-		client: client,
-		config: cfg,
+		client:         client,
+		config:         cfg,
+		internalClient: internalClient,
 	}, nil
 }
 
@@ -86,4 +90,26 @@ func (c *Client) setAuthHeaders(req *graphql.Request) {
 	} else if token := c.config.GetRailwayAuthToken(); token != nil {
 		req.Header.Set("authorization", fmt.Sprintf("Bearer %s", *token))
 	}
+}
+
+// QueryInternal 执行内部GraphQL查询
+func (c *Client) QueryInternal(ctx context.Context, query string, variables map[string]interface{}, response interface{}) error {
+	req := graphql.NewRequest(query)
+
+	// 添加变量
+	if variables != nil {
+		for key, value := range variables {
+			req.Var(key, value)
+		}
+	}
+
+	// 设置认证头
+	c.setAuthHeaders(req)
+
+	return c.internalClient.Run(ctx, req, response)
+}
+
+// MutateInternal 执行内部GraphQL变更
+func (c *Client) MutateInternal(ctx context.Context, mutation string, variables map[string]interface{}, response interface{}) error {
+	return c.QueryInternal(ctx, mutation, variables, response)
 }

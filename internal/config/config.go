@@ -163,6 +163,11 @@ func (c *Config) GetBackboardURL() string {
 	return fmt.Sprintf("https://backboard.%s/graphql/v2", c.GetHost())
 }
 
+// GetBackboardInternalURL 获取Backboard GraphQL端点
+func (c *Config) GetBackboardInternalURL() string {
+	return fmt.Sprintf("https://backboard.%s/graphql/internal", c.GetHost())
+}
+
 // GetRelayHostPath 获取中继服务器主机路径
 func (c *Config) GetRelayHostPath() string {
 	return fmt.Sprintf("backboard.%s/relay", c.GetHost())
