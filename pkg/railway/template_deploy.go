@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/railwayapp/cli/internal/commands"
 	"strings"
 
-	igql "github.com/railwayapp/cli/internal/gql"
+	gql "github.com/railwayapp/cli/internal/gql"
 )
 
 // TemplateVariable 模板变量
@@ -17,30 +18,12 @@ type TemplateVariable struct {
 	IsOptional   *bool   `json:"isOptional,omitempty"`
 }
 
-// TemplateService 模板服务
-type TemplateService struct {
-	Name      string                       `json:"name"`
-	Variables map[string]*TemplateVariable `json:"variables,omitempty"`
-}
-
-// TemplateConfig 模板配置
-type TemplateConfig struct {
-	Services map[string]*TemplateService `json:"services,omitempty"`
-}
-
 // TemplateDeployOptions 模板部署选项
 type TemplateDeployOptions struct {
 	ProjectID     string
 	EnvironmentID string
 	TemplateCode  string
 	Variables     map[string]string // 用户提供的变量，支持 "Service.Key" 和 "Key" 格式
-}
-
-// TemplateDetail 模板详情
-type TemplateDetail struct {
-	ID               string
-	Name             string
-	SerializedConfig json.RawMessage
 }
 
 // DeployTemplateWithConfig 部署模板（高级API，处理变量解析和用户交互）
@@ -52,9 +35,9 @@ func (c *Client) DeployTemplateWithConfig(ctx context.Context, opts TemplateDepl
 	}
 
 	// 2. 解析模板配置
-	var templateConfig TemplateConfig
-	if len(templateDetail.SerializedConfig) > 0 {
-		if err := json.Unmarshal(templateDetail.SerializedConfig, &templateConfig); err != nil {
+	var templateConfig commands.DeserializedTemplateConfig
+	if len(templateDetail.Template.SerializedConfig) > 0 {
+		if err := json.Unmarshal(templateDetail.Template.SerializedConfig, &templateConfig); err != nil {
 			return nil, fmt.Errorf("解析模板配置失败: %w", err)
 		}
 	}
@@ -71,27 +54,23 @@ func (c *Client) DeployTemplateWithConfig(ctx context.Context, opts TemplateDepl
 	}
 
 	// 5. 部署模板
-	return c.DeployTemplate(ctx, opts.ProjectID, opts.EnvironmentID, templateDetail.ID, serializedConfig)
+	return c.DeployTemplate(ctx, opts.ProjectID, opts.EnvironmentID, templateDetail.Template.ID, serializedConfig)
 }
 
 // GetTemplateDetail 获取模板详情
-func (c *Client) GetTemplateDetail(ctx context.Context, templateCode string) (*TemplateDetail, error) {
-	var resp igql.TemplateDetailResponse
-	if err := c.gqlClient.Query(ctx, igql.TemplateDetailQuery, map[string]interface{}{
+func (c *Client) GetTemplateDetail(ctx context.Context, templateCode string) (*gql.TemplateDetailResponse, error) {
+	var resp gql.TemplateDetailResponse
+	if err := c.gqlClient.Query(ctx, gql.TemplateDetailQuery, map[string]interface{}{
 		"code": templateCode,
 	}, &resp); err != nil {
 		return nil, err
 	}
 
-	return &TemplateDetail{
-		ID:               resp.Template.ID,
-		Name:             resp.Template.Name,
-		SerializedConfig: resp.Template.SerializedConfig,
-	}, nil
+	return &resp, nil
 }
 
 // processTemplateVariables 处理模板变量
-func (c *Client) processTemplateVariables(templateConfig *TemplateConfig, userVars map[string]string) error {
+func (c *Client) processTemplateVariables(templateConfig *commands.DeserializedTemplateConfig, userVars map[string]string) error {
 	if templateConfig.Services == nil {
 		return nil
 	}
@@ -139,8 +118,8 @@ func (c *Client) processTemplateVariables(templateConfig *TemplateConfig, userVa
 }
 
 // convertToSerializedConfig 转换为序列化配置
-func (c *Client) convertToSerializedConfig(templateConfig TemplateConfig) (igql.SerializedTemplateConfig, error) {
-	serializedConfig := make(igql.SerializedTemplateConfig)
+func (c *Client) convertToSerializedConfig(templateConfig commands.DeserializedTemplateConfig) (gql.SerializedTemplateConfig, error) {
+	serializedConfig := make(gql.SerializedTemplateConfig)
 	configBytes, err := json.Marshal(templateConfig)
 	if err != nil {
 		return nil, err
