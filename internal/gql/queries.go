@@ -550,3 +550,23 @@ type BackupsResponse struct {
 		} `json:"pageInfo"`
 	} `json:"backups"`
 }
+
+// WorkflowStatus GraphQL查询
+const WorkflowStatusQuery = `
+query WorkflowStatus($workflowId: String!) {
+  workflowStatus(workflowId: $workflowId) {
+    __typename
+    error
+    status
+  }
+}
+`
+
+// WorkflowStatusResponse workflow状态响应
+type WorkflowStatusResponse struct {
+	WorkflowStatus struct {
+		Typename string  `json:"__typename"`
+		Error    *string `json:"error"`
+		Status   string  `json:"status"`
+	} `json:"workflowStatus"`
+}

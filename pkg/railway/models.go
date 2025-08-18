@@ -29,3 +29,21 @@ type DeploymentInfo struct {
 	URL       *string
 	Service   Service
 }
+
+// WorkflowStep workflow步骤信息
+type WorkflowStep struct {
+	ID          string
+	Name        string
+	Status      string
+	StartedAt   *string
+	CompletedAt *string
+	Error       *string
+	Logs        *string
+}
+
+// WorkflowInfo workflow详细信息
+type WorkflowInfo struct {
+	ID     string
+	Status string
+	Error  *string
+}
