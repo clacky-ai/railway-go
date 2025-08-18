@@ -9,9 +9,10 @@ import (
 
 // Deployment 部署信息（最小字段）
 type Deployment struct {
-	ID     string
-	Status string
-	URL    *string
+	ID      string
+	Status  string
+	URL     *string
+	Service Service
 }
 
 // ListDeployments 列出部署
@@ -26,7 +27,7 @@ func (c *Client) ListDeployments(ctx context.Context, projectID, environmentID s
 	}
 	out := make([]Deployment, 0, len(resp.Deployments.Edges))
 	for _, e := range resp.Deployments.Edges {
-		out = append(out, Deployment{ID: e.Node.ID, Status: e.Node.Status, URL: e.Node.URL})
+		out = append(out, Deployment{ID: e.Node.ID, Status: e.Node.Status, URL: e.Node.URL, Service: Service{ID: e.Node.Service.ID, Name: e.Node.Service.Name}})
 	}
 	return out, nil
 }
