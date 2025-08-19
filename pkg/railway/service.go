@@ -74,3 +74,12 @@ func (c *Client) ListServices(ctx context.Context, projectID string, environment
 	}
 	return out, nil
 }
+
+// RollbackDeployment 回滚部署
+func (c *Client) RollbackDeployment(ctx context.Context, deploymentID string) (bool, error) {
+	var resp igql.DeploymentRollbackResponse
+	if err := c.gqlClient.Mutate(ctx, igql.DeploymentRollbackMutation, map[string]any{"id": deploymentID}, &resp); err != nil {
+		return false, err
+	}
+	return resp.DeploymentRollback, nil
+}

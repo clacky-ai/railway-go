@@ -53,8 +53,24 @@ func main() {
 			backup, err := cli.CreateVolumeBackup(ctx, instance.ID)
 			check(err)
 			fmt.Println(backup)
+
+			backups, err := cli.GetAllVolumeBackups(ctx, instance.ID)
+			check(err)
+			fmt.Println(backups)
+
+			backup, err = cli.RestoreVolumeBackup(ctx, instance.ID, backups[0].ID)
+			check(err)
+			fmt.Println(backup)
+
+			// 测试提交环境阶段性变更
+			message := "测试提交阶段性变更"
+			skipDeploys := false
+			commitID, err := cli.EnvironmentPatchCommitStaged(ctx, environmentID, &message, &skipDeploys)
+			check(err)
+			fmt.Printf("环境阶段性变更提交成功，提交ID: %s\n", commitID)
 		}
 	}
+
 }
 
 func check(err error) {

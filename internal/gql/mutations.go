@@ -432,15 +432,6 @@ type ProjectTokenDeleteInput struct {
 	ID string `json:"id"`
 }
 
-// BackupRollbackResponse 备份回滚响应
-type BackupRollbackResponse struct {
-	BackupRollback struct {
-		ID           string `json:"id"`
-		Status       string `json:"status"`
-		DeploymentID string `json:"deploymentId"`
-	} `json:"backupRollback"`
-}
-
 // VolumeInstanceBackupCreate GraphQL变更（直接参数）
 const VolumeInstanceBackupCreateMutation = `
 mutation VolumeInstanceBackupCreate($volumeInstanceId: String!) {
@@ -490,4 +481,16 @@ mutation environmentPatchCommitStaged($environmentId: String!, $message: String,
 // EnvironmentPatchCommitStagedResponse 环境补丁提交阶段性变更响应
 type EnvironmentPatchCommitStagedResponse struct {
 	EnvironmentPatchCommitStaged string `json:"environmentPatchCommitStaged"`
+}
+
+// DeploymentRollback GraphQL变更
+const DeploymentRollbackMutation = `
+mutation deploymentRollback($id: String!) {
+  deploymentRollback(id: $id)
+}
+`
+
+// DeploymentRollbackResponse 部署回滚响应
+type DeploymentRollbackResponse struct {
+	DeploymentRollback bool `json:"deploymentRollback"`
 }
