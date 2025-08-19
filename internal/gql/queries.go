@@ -64,23 +64,6 @@ type TemplateDetailResponse struct {
 	} `json:"template"`
 }
 
-// Projects GraphQL查询
-const ProjectsQuery = `
-query Projects {
-  projects {
-    edges {
-      node {
-        id
-        name
-        description
-        createdAt
-        updatedAt
-      }
-    }
-  }
-}
-`
-
 // ProjectsResponse 项目列表响应
 type ProjectsResponse struct {
 	Projects struct {
@@ -521,32 +504,6 @@ type ProjectTokensResponse struct {
 	} `json:"projectTokens"`
 }
 
-// Backups GraphQL查询
-const BackupsQuery = `
-query Backups($serviceId: String!, $after: String) {
-  backups(serviceId: $serviceId, first: 50, after: $after) {
-    edges {
-      cursor
-      node {
-        id
-        name
-        createdAt
-        status
-        size
-        service {
-          id
-          name
-        }
-      }
-    }
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-  }
-}
-`
-
 // BackupsResponse 备份列表响应
 type BackupsResponse struct {
 	Backups struct {
@@ -713,4 +670,34 @@ type EnvironmentConfigResponse struct {
 		LastAppliedError *string         `json:"lastAppliedError"`
 		Patch            json.RawMessage `json:"patch"`
 	} `json:"environmentStagedChanges"`
+}
+
+// VolumeInstanceBackupList GraphQL查询
+const VolumeInstanceBackupListQuery = `
+query volumeInstanceBackupList($volumeInstanceId: String!) {
+  volumeInstanceBackupList(volumeInstanceId: $volumeInstanceId) {
+    id
+    name
+    expiresAt
+    externalId
+    usedMB
+    referencedMB
+    createdAt
+    scheduleId
+  }
+}
+`
+
+// VolumeInstanceBackupListResponse 卷实例备份列表响应
+type VolumeInstanceBackupListResponse struct {
+	VolumeInstanceBackupList []struct {
+		ID           string  `json:"id"`
+		Name         string  `json:"name"`
+		ExpiresAt    *string `json:"expiresAt"`
+		ExternalID   *string `json:"externalId"`
+		UsedMB       *int64  `json:"usedMB"`
+		ReferencedMB *int64  `json:"referencedMB"`
+		CreatedAt    string  `json:"createdAt"`
+		ScheduleID   *string `json:"scheduleId"`
+	} `json:"volumeInstanceBackupList"`
 }
