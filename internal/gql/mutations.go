@@ -475,3 +475,19 @@ type VolumeInstanceBackupRestoreResponse struct {
 		WorkflowID string `json:"workflowId"`
 	} `json:"volumeInstanceBackupRestore"`
 }
+
+// EnvironmentPatchCommitStaged GraphQL变更
+const EnvironmentPatchCommitStagedMutation = `
+mutation environmentPatchCommitStaged($environmentId: String!, $message: String, $skipDeploys: Boolean) {
+  environmentPatchCommitStaged(
+    environmentId: $environmentId
+    commitMessage: $message
+    skipDeploys: $skipDeploys
+  )
+}
+`
+
+// EnvironmentPatchCommitStagedResponse 环境补丁提交阶段性变更响应
+type EnvironmentPatchCommitStagedResponse struct {
+	EnvironmentPatchCommitStaged string `json:"environmentPatchCommitStaged"`
+}

@@ -162,3 +162,27 @@ func (c *Client) GetEnvironmentConfig(ctx context.Context, environmentID string,
 
 	return result, nil
 }
+
+// EnvironmentPatchCommitStaged 提交环境阶段性变更
+func (c *Client) EnvironmentPatchCommitStaged(ctx context.Context, environmentID string, message *string, skipDeploys *bool) (string, error) {
+	// 构建变更变量
+	variables := map[string]interface{}{
+		"environmentId": environmentID,
+	}
+
+	// 添加可选参数
+	if message != nil {
+		variables["message"] = *message
+	}
+	if skipDeploys != nil {
+		variables["skipDeploys"] = *skipDeploys
+	}
+
+	// 执行变更
+	var resp gql.EnvironmentPatchCommitStagedResponse
+	if err := c.gqlClient.MutateInternal(ctx, gql.EnvironmentPatchCommitStagedMutation, variables, &resp); err != nil {
+		return "", err
+	}
+
+	return resp.EnvironmentPatchCommitStaged, nil
+}
