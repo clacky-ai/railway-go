@@ -484,3 +484,38 @@ type BackupRollbackResponse struct {
 		DeploymentID string `json:"deploymentId"`
 	} `json:"backupRollback"`
 }
+
+// VolumeInstanceBackupCreate GraphQL变更（直接参数）
+const VolumeInstanceBackupCreateMutation = `
+mutation VolumeInstanceBackupCreate($volumeInstanceId: String!) {
+  volumeInstanceBackupCreate(volumeInstanceId: $volumeInstanceId) {
+    workflowId
+  }
+}
+`
+
+// VolumeInstanceBackupCreateResponse 备份创建响应（返回工作流ID）
+type VolumeInstanceBackupCreateResponse struct {
+	VolumeInstanceBackupCreate struct {
+		WorkflowID string `json:"workflowId"`
+	} `json:"volumeInstanceBackupCreate"`
+}
+
+// VolumeInstanceBackupRestore GraphQL变更
+const VolumeInstanceBackupRestoreMutation = `
+mutation VolumeInstanceBackupRestore($volumeInstanceId: String!, $volumeInstanceBackupId: String!) {
+  volumeInstanceBackupRestore(
+    volumeInstanceId: $volumeInstanceId
+    volumeInstanceBackupId: $volumeInstanceBackupId
+  ) {
+    workflowId
+  }
+}
+`
+
+// VolumeInstanceBackupRestoreResponse 备份恢复响应
+type VolumeInstanceBackupRestoreResponse struct {
+	VolumeInstanceBackupRestore struct {
+		WorkflowID string `json:"workflowId"`
+	} `json:"volumeInstanceBackupRestore"`
+}

@@ -129,6 +129,16 @@ query Project($id: String!) {
         }
       }
     }
+    volumes {
+      edges {
+        node {
+          id
+          name
+          createdAt
+          projectId
+        }
+      }
+    }
   }
 }
 `
@@ -165,6 +175,16 @@ type ProjectResponse struct {
 				} `json:"node"`
 			} `json:"edges"`
 		} `json:"services"`
+		Volumes struct {
+			Edges []struct {
+				Node struct {
+					ID        string `json:"id"`
+					Name      string `json:"name"`
+					CreatedAt string `json:"createdAt"`
+					ProjectID string `json:"projectId"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"volumes"`
 	} `json:"project"`
 }
 

@@ -14,12 +14,21 @@ type Environment struct {
 	Name string
 }
 
-// Project 项目信息（含环境与服务的最小字段）
+// Volume 卷信息
+type Volume struct {
+	ID        string
+	Name      string
+	CreatedAt string
+	ProjectID string
+}
+
+// Project 项目信息（含环境、服务与卷的最小字段）
 type Project struct {
 	ID           string
 	Name         string
 	Environments []Environment
 	Services     []Service
+	Volumes      []Volume
 }
 
 // ProjectListItem 项目列表条目（轻量，仅保留必要字段）
@@ -28,7 +37,7 @@ type ProjectListItem struct {
 	Name string
 }
 
-// GetProject 获取项目详情（携带环境与服务核心字段）
+// GetProject 获取项目详情（携带环境、服务与卷核心字段）
 func (c *Client) GetProject(ctx context.Context, projectID string) (*Project, error) {
 	var resp igql.ProjectResponse
 	if err := c.gqlClient.Query(ctx, igql.ProjectQuery, map[string]any{"id": projectID}, &resp); err != nil {
@@ -40,6 +49,14 @@ func (c *Client) GetProject(ctx context.Context, projectID string) (*Project, er
 	}
 	for _, s := range resp.Project.Services.Edges {
 		p.Services = append(p.Services, Service{ID: s.Node.ID, Name: s.Node.Name})
+	}
+	for _, v := range resp.Project.Volumes.Edges {
+		p.Volumes = append(p.Volumes, Volume{
+			ID:        v.Node.ID,
+			Name:      v.Node.Name,
+			CreatedAt: v.Node.CreatedAt,
+			ProjectID: v.Node.ProjectID,
+		})
 	}
 	return &p, nil
 }

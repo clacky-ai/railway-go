@@ -131,3 +131,24 @@ func (c *Client) GetAllBackups(ctx context.Context, serviceID string) ([]Backup,
 
 	return allBackups, nil
 }
+
+// CreateVolumeBackup 通过卷实例ID创建备份，返回工作流ID
+func (c *Client) CreateVolumeBackup(ctx context.Context, volumeInstanceID string) (string, error) {
+	var resp igql.VolumeInstanceBackupCreateResponse
+	if err := c.gqlClient.Mutate(ctx, igql.VolumeInstanceBackupCreateMutation, map[string]any{"volumeInstanceId": volumeInstanceID}, &resp); err != nil {
+		return "", err
+	}
+	return resp.VolumeInstanceBackupCreate.WorkflowID, nil
+}
+
+// RestoreVolumeBackup 通过卷实例ID和备份ID恢复备份，返回工作流ID
+func (c *Client) RestoreVolumeBackup(ctx context.Context, volumeInstanceID, volumeInstanceBackupID string) (string, error) {
+	var resp igql.VolumeInstanceBackupRestoreResponse
+	if err := c.gqlClient.Mutate(ctx, igql.VolumeInstanceBackupRestoreMutation, map[string]any{
+		"volumeInstanceId":       volumeInstanceID,
+		"volumeInstanceBackupId": volumeInstanceBackupID,
+	}, &resp); err != nil {
+		return "", err
+	}
+	return resp.VolumeInstanceBackupRestore.WorkflowID, nil
+}
