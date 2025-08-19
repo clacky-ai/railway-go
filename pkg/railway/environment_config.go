@@ -68,19 +68,15 @@ type EnvironmentStagedChanges struct {
 }
 
 // GetEnvironmentConfig 获取环境配置
-func (c *Client) GetEnvironmentConfig(ctx context.Context, environmentID string, decryptVariables *bool, decryptPatchVariables *bool) (*EnvironmentConfig, error) {
+func (c *Client) GetEnvironmentConfig(ctx context.Context, environmentID string, decryptVariables bool, decryptPatchVariables bool) (*EnvironmentConfig, error) {
 	// 构建查询变量
 	variables := map[string]interface{}{
 		"environmentId": environmentID,
 	}
 
 	// 添加可选参数
-	if decryptVariables != nil {
-		variables["decryptVariables"] = *decryptVariables
-	}
-	if decryptPatchVariables != nil {
-		variables["decryptPatchVariables"] = *decryptPatchVariables
-	}
+	variables["decryptVariables"] = decryptVariables
+	variables["decryptPatchVariables"] = decryptPatchVariables
 
 	// 执行查询
 	var response gql.EnvironmentConfigResponse
