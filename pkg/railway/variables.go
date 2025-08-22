@@ -161,7 +161,7 @@ type StageEnvironmentConfig struct {
 
 // StageServiceConfig 暂存服务配置结构
 type StageServiceConfig struct {
-	Variables map[string]StageVariableConfig `json:"variables,omitempty"`
+	Variables map[string]*StageVariableConfig `json:"variables,omitempty"`
 }
 
 // StageVariableConfig 暂存变量配置结构
@@ -182,11 +182,16 @@ func (c *Client) StageEnvironmentChanges(ctx context.Context, environmentID stri
 }
 
 // StageServiceVariables 暂存服务变量变更的便捷方法
-func (c *Client) StageServiceVariables(ctx context.Context, environmentID, serviceID string, variables map[string]string) (string, error) {
+func (c *Client) StageServiceVariables(ctx context.Context, environmentID, serviceID string, variables map[string]*string) (string, error) {
 	// 将简单的键值对转换为 StageVariableConfig 结构
-	serviceVariables := make(map[string]StageVariableConfig)
+	serviceVariables := make(map[string]*StageVariableConfig)
 	for key, value := range variables {
-		serviceVariables[key] = StageVariableConfig{Value: value}
+		if value == nil {
+			serviceVariables[key] = nil
+		} else {
+			serviceVariables[key] = &StageVariableConfig{Value: *value}
+		}
+
 	}
 
 	payload := StageEnvironmentConfig{
