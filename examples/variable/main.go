@@ -27,18 +27,21 @@ func main() {
 
 	ctx := context.Background()
 
-	project, err := cli.GetProject(ctx, "8c394d21-b107-4b72-ac4c-8957ee3eebad")
+	project, err := cli.GetProject(ctx, "15fe48c7-8d02-4a18-aa4e-e7718e24291e")
 	check(err)
 
-	//err = cli.DeleteService(ctx, "76e9ed07-3968-4198-b66d-4788c11ee03d")
-	//check(err)
-	//available, message, err := cli.CheckCustomDomainAvailable(ctx, "fscc.clackyai.appss")
-	//check(err)
-	//fmt.Println(available, message)
-	domain, err := cli.CreateCustomDomain(ctx, project.ID, project.Environments[0].ID, "009d618d-d7e5-4f18-a488-bcf4d152e198", "mynginx.clackyai.app", nil)
-	check(err)
-	fmt.Println(domain)
+	serviceID := "e81eb2f2-35f1-4c84-b89a-6e8cb9effa03"
 
+	variables, err := cli.GetVariables(ctx, project.ID, project.Environments[0].ID, serviceID)
+	check(err)
+
+	fmt.Println(variables)
+	variables["abs"] = "ssssss"
+	variables["fs"] = "1"
+
+	s, err := cli.StageServiceVariables(ctx, project.Environments[0].ID, serviceID, variables)
+	check(err)
+	println(s)
 }
 
 func check(err error) {

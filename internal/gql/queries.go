@@ -701,3 +701,29 @@ type VolumeInstanceBackupListResponse struct {
 		ScheduleID   *string `json:"scheduleId"`
 	} `json:"volumeInstanceBackupList"`
 }
+
+// VolumeInstanceBackupScheduleList GraphQL查询
+const VolumeInstanceBackupScheduleListQuery = `
+query volumeInstanceBackupScheduleList($volumeInstanceId: String!) {
+  volumeInstanceBackupScheduleList(volumeInstanceId: $volumeInstanceId) {
+    id
+    name
+    cron
+    kind
+    retentionSeconds
+    createdAt
+  }
+}
+`
+
+// VolumeInstanceBackupScheduleListResponse 卷实例备份调度列表响应
+type VolumeInstanceBackupScheduleListResponse struct {
+	VolumeInstanceBackupScheduleList []struct {
+		ID               string `json:"id"`
+		Name             string `json:"name"`
+		Cron             string `json:"cron"`
+		Kind             string `json:"kind"`
+		RetentionSeconds int64  `json:"retentionSeconds"`
+		CreatedAt        string `json:"createdAt"`
+	} `json:"volumeInstanceBackupScheduleList"`
+}

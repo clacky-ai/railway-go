@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	igql "github.com/railwayapp/cli/internal/gql"
 )
 
 // VariableDiff 表示变量差异
@@ -150,4 +152,50 @@ func (c *Client) ApplyVariableDiff(ctx context.Context, projectID, environmentID
 		return nil
 	}
 	return c.UpsertVariables(ctx, projectID, environmentID, serviceID, false, diff.AddedOrUpdated)
+}
+
+// StageEnvironmentConfig 暂存环境配置结构
+type StageEnvironmentConfig struct {
+	Services map[string]StageServiceConfig `json:"services,omitempty"`
+}
+
+// StageServiceConfig 暂存服务配置结构
+type StageServiceConfig struct {
+	Variables map[string]StageVariableConfig `json:"variables,omitempty"`
+}
+
+// StageVariableConfig 暂存变量配置结构
+type StageVariableConfig struct {
+	Value string `json:"value"`
+}
+
+// StageEnvironmentChanges 暂存环境变更
+func (c *Client) StageEnvironmentChanges(ctx context.Context, environmentID string, payload StageEnvironmentConfig) (string, error) {
+	var resp igql.EnvironmentStageChangesResponse
+	if err := c.gqlClient.MutateInternal(ctx, igql.EnvironmentStageChangesMutation, map[string]any{
+		"environmentId": environmentID,
+		"payload":       payload,
+	}, &resp); err != nil {
+		return "", err
+	}
+	return resp.EnvironmentStageChanges.ID, nil
+}
+
+// StageServiceVariables 暂存服务变量变更的便捷方法
+func (c *Client) StageServiceVariables(ctx context.Context, environmentID, serviceID string, variables map[string]string) (string, error) {
+	// 将简单的键值对转换为 StageVariableConfig 结构
+	serviceVariables := make(map[string]StageVariableConfig)
+	for key, value := range variables {
+		serviceVariables[key] = StageVariableConfig{Value: value}
+	}
+
+	payload := StageEnvironmentConfig{
+		Services: map[string]StageServiceConfig{
+			serviceID: {
+				Variables: serviceVariables,
+			},
+		},
+	}
+
+	return c.StageEnvironmentChanges(ctx, environmentID, payload)
 }

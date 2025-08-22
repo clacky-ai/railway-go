@@ -494,3 +494,34 @@ mutation deploymentRollback($id: String!) {
 type DeploymentRollbackResponse struct {
 	DeploymentRollback bool `json:"deploymentRollback"`
 }
+
+// VolumeInstanceBackupScheduleUpdate GraphQL变更
+const VolumeInstanceBackupScheduleUpdateMutation = `
+mutation volumeInstanceBackupScheduleUpdate($volumeInstanceId: String!, $kinds: [VolumeInstanceBackupScheduleKind!]!) {
+  volumeInstanceBackupScheduleUpdate(
+    volumeInstanceId: $volumeInstanceId
+    kinds: $kinds
+  )
+}
+`
+
+// VolumeInstanceBackupScheduleUpdateResponse 卷备份调度更新响应
+type VolumeInstanceBackupScheduleUpdateResponse struct {
+	VolumeInstanceBackupScheduleUpdate bool `json:"volumeInstanceBackupScheduleUpdate"`
+}
+
+// EnvironmentStageChanges GraphQL变更
+const EnvironmentStageChangesMutation = `
+mutation stageEnvironmentChanges($environmentId: String!, $payload: EnvironmentConfig!) {
+  environmentStageChanges(environmentId: $environmentId, input: $payload) {
+    id
+  }
+}
+`
+
+// EnvironmentStageChangesResponse 环境变更暂存响应
+type EnvironmentStageChangesResponse struct {
+	EnvironmentStageChanges struct {
+		ID string `json:"id"`
+	} `json:"environmentStageChanges"`
+}
