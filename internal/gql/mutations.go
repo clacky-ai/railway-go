@@ -467,6 +467,25 @@ type VolumeInstanceBackupRestoreResponse struct {
 	} `json:"volumeInstanceBackupRestore"`
 }
 
+// VolumeInstanceBackupBatchDelete GraphQL变更
+const VolumeInstanceBackupBatchDeleteMutation = `
+mutation volumeInstanceBackupBatchDelete($volumeInstanceId: String!, $volumeInstanceBackupIds: [String!]!) {
+  volumeInstanceBackupBatchDelete(
+    volumeInstanceId: $volumeInstanceId
+    volumeInstanceBackupIds: $volumeInstanceBackupIds
+  ) {
+    workflowId
+  }
+}
+`
+
+// VolumeInstanceBackupBatchDeleteResponse 备份批量删除响应
+type VolumeInstanceBackupBatchDeleteResponse struct {
+	VolumeInstanceBackupBatchDelete struct {
+		WorkflowID string `json:"workflowId"`
+	} `json:"volumeInstanceBackupBatchDelete"`
+}
+
 // EnvironmentPatchCommitStaged GraphQL变更
 const EnvironmentPatchCommitStagedMutation = `
 mutation environmentPatchCommitStaged($environmentId: String!, $message: String, $skipDeploys: Boolean) {

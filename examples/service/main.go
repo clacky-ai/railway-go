@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -27,18 +26,21 @@ func main() {
 
 	ctx := context.Background()
 
-	project, err := cli.GetProject(ctx, "8c394d21-b107-4b72-ac4c-8957ee3eebad")
+	project, err := cli.GetProject(ctx, "15fe48c7-8d02-4a18-aa4e-e7718e24291e")
 	check(err)
 
-	//err = cli.DeleteService(ctx, "76e9ed07-3968-4198-b66d-4788c11ee03d")
+	srv := "797664e8-fcf8-4875-9e0f-165e2fabec4a"
+	////err = cli.DeleteService(ctx, "76e9ed07-3968-4198-b66d-4788c11ee03d")
+	////check(err)
+	////available, message, err := cli.CheckCustomDomainAvailable(ctx, "fscc.clackyai.appss")
+	////check(err)
+	////fmt.Println(available, message)
+	//domain, err := cli.CreateCustomDomain(ctx, project.ID, project.Environments[0].ID, "009d618d-d7e5-4f18-a488-bcf4d152e198", "mynginx.clackyai.app", nil)
 	//check(err)
-	//available, message, err := cli.CheckCustomDomainAvailable(ctx, "fscc.clackyai.appss")
-	//check(err)
-	//fmt.Println(available, message)
-	domain, err := cli.CreateCustomDomain(ctx, project.ID, project.Environments[0].ID, "009d618d-d7e5-4f18-a488-bcf4d152e198", "mynginx.clackyai.app", nil)
-	check(err)
-	fmt.Println(domain)
+	//fmt.Println(domain)
+	err = cli.Down(ctx, project.ID, project.Environments[0].ID, srv)
 
+	check(err)
 }
 
 func check(err error) {
