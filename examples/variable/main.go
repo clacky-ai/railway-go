@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -27,19 +28,74 @@ func main() {
 
 	ctx := context.Background()
 
-	project, err := cli.GetProject(ctx, "15fe48c7-8d02-4a18-aa4e-e7718e24291e")
+	project, err := cli.GetProject(ctx, "538cdb06-4ac5-4a62-8166-5a2b0c48e4b6")
 	check(err)
 
-	serviceID := "e81eb2f2-35f1-4c84-b89a-6e8cb9effa03"
+	serviceID := "b9c1597b-258b-4426-90c2-3dc337309e29"
 
 	variables, err := cli.GetVariables(ctx, project.ID, project.Environments[0].ID, serviceID)
 	check(err)
-
 	fmt.Println(variables)
-	variables["abs"] = "ssssss"
-	variables["fs"] = "1"
 
-	s, err := cli.StageServiceVariables(ctx, project.Environments[0].ID, serviceID, variables)
+	config, err := cli.GetEnvironmentConfig(ctx, project.Environments[0].ID, true, true)
+	check(err)
+	fmt.Println(config)
+
+	fmt.Println(config.EnvironmentStagedChanges.Patch)
+	//services := config.EnvironmentStagedChanges.Patch["services"]
+	marshal, _ := json.Marshal(config.EnvironmentStagedChanges.Patch)
+	// {"services":{"b9c1597b-258b-4426-90c2-3dc337309e29":{"variables":{"ssssssssssssss":null}}}}
+
+	fmt.Println(string(marshal))
+
+	if servicesItem := config.EnvironmentStagedChanges.Patch["services"]; servicesItem != nil {
+		if services, ok := servicesItem.(map[string]interface{}); ok {
+			if serviceItem := services[serviceID]; serviceItem != nil {
+				if service, ok := serviceItem.(map[string]interface{}); ok {
+					if variables := service["variables"]; variables != nil {
+						if variables, ok := variables.(map[string]interface{}); ok {
+							for k, v := range variables {
+								if v == nil {
+									fmt.Println("delete key:" + k)
+								} else {
+									obj := v.(map[string]interface{})
+									value := obj["value"]
+									var env string
+									switch value.(type) {
+									case string:
+										env = value.(string)
+									default:
+										env = fmt.Sprintf("%v", v)
+									}
+									fmt.Println(k, env)
+								}
+
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	//if services != nil {
+	//	m, ok := services[serviceID](map[string]interface{})
+	//	if ok {
+	//		variables := m["variables"]
+	//		m, ok := variables.(map[string]*string)
+	//	}
+	//	app := services[serviceID]
+	//
+	//}
+	//for k, v := range services[serviceID]["variables"].(map[string]interface{}) {
+	//	fmt.Println(k, v)
+	//}
+	//services[serviceID]["variables"] = m
+
+	v1 := "vss"
+	m := map[string]*string{}
+	m["kss"] = &v1
+
+	s, err := cli.StageServiceVariables(ctx, project.Environments[0].ID, serviceID, m)
 	check(err)
 	println(s)
 }
