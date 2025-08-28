@@ -727,3 +727,216 @@ type VolumeInstanceBackupScheduleListResponse struct {
 		CreatedAt        string `json:"createdAt"`
 	} `json:"volumeInstanceBackupScheduleList"`
 }
+
+// SingleProjectMetricsAndUsage GraphQL查询
+const SingleProjectMetricsAndUsageQuery = `
+query singleProjectMetricsAndUsage($projectId: String!, $usageMeasurements: [MetricMeasurement!]!, $metricsMeasurements: [MetricMeasurement!]!, $startDate: DateTime!, $endDate: DateTime!, $sampleRateSeconds: Int) {
+  metrics(
+    projectId: $projectId
+    measurements: $metricsMeasurements
+    startDate: $startDate
+    endDate: $endDate
+    sampleRateSeconds: $sampleRateSeconds
+  ) {
+    ...MetricsResultFields
+    tags {
+      projectId
+    }
+  }
+  estimatedUsage(projectId: $projectId, measurements: $usageMeasurements) {
+    ...EstimatedUsageFields
+  }
+  usage(
+    projectId: $projectId
+    measurements: $usageMeasurements
+    groupBy: [PROJECT_ID, SERVICE_ID, PLUGIN_ID]
+    startDate: $startDate
+    endDate: $endDate
+  ) {
+    ...AggregatedUsageFields
+  }
+  project(id: $projectId) {
+    id
+    name
+    deletedAt
+    createdAt
+    plugins {
+      edges {
+        node {
+          id
+          name
+          deletedAt
+        }
+      }
+    }
+    services {
+      edges {
+        node {
+          id
+          name
+          deletedAt
+        }
+      }
+    }
+  }
+}
+
+fragment MetricsResultFields on MetricsResult {
+  measurement
+  values {
+    ...MetricFields
+  }
+}
+
+fragment MetricFields on Metric {
+  ts
+  value
+}
+
+fragment EstimatedUsageFields on EstimatedUsage {
+  measurement
+  estimatedValue
+  projectId
+}
+
+fragment AggregatedUsageFields on AggregatedUsage {
+  measurement
+  value
+  tags {
+    projectId
+    serviceId
+    pluginId
+  }
+}
+`
+
+// SingleProjectMetricsAndUsageResponse 单项目指标和使用量响应
+type SingleProjectMetricsAndUsageResponse struct {
+	Metrics []struct {
+		Measurement string `json:"measurement"`
+		Values      []struct {
+			TS    int64   `json:"ts"`
+			Value float64 `json:"value"`
+		} `json:"values"`
+		Tags struct {
+			ProjectID *string `json:"projectId"`
+		} `json:"tags"`
+	} `json:"metrics"`
+	EstimatedUsage []struct {
+		Measurement    string  `json:"measurement"`
+		EstimatedValue float64 `json:"estimatedValue"`
+		ProjectID      string  `json:"projectId"`
+	} `json:"estimatedUsage"`
+	Usage []struct {
+		Measurement string  `json:"measurement"`
+		Value       float64 `json:"value"`
+		Tags        struct {
+			ProjectID *string `json:"projectId"`
+			ServiceID *string `json:"serviceId"`
+			PluginID  *string `json:"pluginId"`
+		} `json:"tags"`
+	} `json:"usage"`
+	Project struct {
+		ID        string  `json:"id"`
+		Name      string  `json:"name"`
+		DeletedAt *string `json:"deletedAt"`
+		CreatedAt string  `json:"createdAt"`
+		Plugins   struct {
+			Edges []struct {
+				Node struct {
+					ID        string  `json:"id"`
+					Name      string  `json:"name"`
+					DeletedAt *string `json:"deletedAt"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"plugins"`
+		Services struct {
+			Edges []struct {
+				Node struct {
+					ID        string  `json:"id"`
+					Name      string  `json:"name"`
+					DeletedAt *string `json:"deletedAt"`
+				} `json:"node"`
+			} `json:"edges"`
+		} `json:"services"`
+	} `json:"project"`
+}
+
+// AllProjectUsage GraphQL查询
+const AllProjectUsageQuery = `
+query allProjectUsage($teamId: String, $userId: String, $usageMeasurements: [MetricMeasurement!]!, $startDate: DateTime!, $endDate: DateTime!, $includeDeleted: Boolean) {
+  estimatedUsage(
+    teamId: $teamId
+    userId: $userId
+    measurements: $usageMeasurements
+    includeDeleted: $includeDeleted
+  ) {
+    ...EstimatedUsageFields
+  }
+  usage(
+    teamId: $teamId
+    userId: $userId
+    measurements: $usageMeasurements
+    groupBy: [PROJECT_ID]
+    startDate: $startDate
+    endDate: $endDate
+    includeDeleted: $includeDeleted
+  ) {
+    ...AggregatedUsageFields
+  }
+  projects(first: 5000, includeDeleted: true, userId: $userId, teamId: $teamId) {
+    edges {
+      node {
+        id
+        name
+        deletedAt
+        createdAt
+      }
+    }
+  }
+}
+
+fragment EstimatedUsageFields on EstimatedUsage {
+  measurement
+  estimatedValue
+  projectId
+}
+
+fragment AggregatedUsageFields on AggregatedUsage {
+  measurement
+  value
+  tags {
+    projectId
+    serviceId
+    pluginId
+  }
+}
+`
+
+// AllProjectUsageResponse 所有项目使用量响应
+type AllProjectUsageResponse struct {
+	EstimatedUsage []struct {
+		Measurement    string  `json:"measurement"`
+		EstimatedValue float64 `json:"estimatedValue"`
+		ProjectID      string  `json:"projectId"`
+	} `json:"estimatedUsage"`
+	Usage []struct {
+		Measurement string  `json:"measurement"`
+		Value       float64 `json:"value"`
+		Tags        struct {
+			ProjectID *string `json:"projectId"`
+			ServiceID *string `json:"serviceId"`
+			PluginID  *string `json:"pluginId"`
+		} `json:"tags"`
+	} `json:"usage"`
+	Projects struct {
+		Edges []struct {
+			Node struct {
+				ID        string  `json:"id"`
+				Name      string  `json:"name"`
+				DeletedAt *string `json:"deletedAt"`
+				CreatedAt string  `json:"createdAt"`
+			} `json:"node"`
+		} `json:"edges"`
+	} `json:"projects"`
+}

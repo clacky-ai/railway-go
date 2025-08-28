@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/railwayapp/cli/pkg/railway"
 )
@@ -41,7 +42,13 @@ func main() {
 	//})
 
 	cli.SubscribeBuildLogs(ctx, deployments[0].ID, "", 1000, func(timestamp, message string, attr map[string]string) {
-		log.Printf("[%s] %s %v", timestamp, message, attr)
+		parsedTime, err := time.Parse(time.RFC3339, timestamp)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		log.Printf("[%v] %s %v", parsedTime, message, attr)
 	})
 	//err = cli.SubscribeEnvironmentLogs(ctx, project.Environments[0].ID, "(  ) @snapshot:fe3c55a7-0ec9-4a27-bc4a-7d76eccd702a OR @replica:fe3c55a7-0ec9-4a27-bc4a-7d76eccd702a", 1000, "2025-08-27T02:55:21.874Z", "", "", nil, func(timestamp, message, severity string, tags map[string]*string, attr map[string]string) {
 	//	fmt.Println(timestamp, message, severity, tags, attr)
