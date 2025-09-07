@@ -162,6 +162,12 @@ type StageEnvironmentConfig struct {
 // StageServiceConfig 暂存服务配置结构
 type StageServiceConfig struct {
 	Variables map[string]*StageVariableConfig `json:"variables,omitempty"`
+	Deploy    *StageDeployConfig              `json:"deploy,omitempty"`
+}
+
+// StageDeployConfig 暂存部署配置结构
+type StageDeployConfig struct {
+	SleepApplication *bool `json:"sleepApplication,omitempty"`
 }
 
 // StageVariableConfig 暂存变量配置结构
@@ -172,6 +178,8 @@ type StageVariableConfig struct {
 // StageEnvironmentChanges 暂存环境变更
 func (c *Client) StageEnvironmentChanges(ctx context.Context, environmentID string, payload StageEnvironmentConfig) (string, error) {
 	var resp igql.EnvironmentStageChangesResponse
+	var plStr, _ = json.Marshal(payload)
+	fmt.Println(string(plStr))
 	if err := c.gqlClient.MutateInternal(ctx, igql.EnvironmentStageChangesMutation, map[string]any{
 		"environmentId": environmentID,
 		"payload":       payload,
