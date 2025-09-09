@@ -46,7 +46,7 @@ func (c *Client) ListWorkspaces(ctx context.Context) ([]Workspace, error) {
 	// 使用 map 去重
 	m := map[string]Workspace{}
 	for _, ew := range resp.ExternalWorkspaces {
-		w := Workspace{ID: ew.ID, Name: ew.Name, TeamID: ew.TeamID}
+		w := Workspace{ID: ew.ID, Name: ew.Name, TeamID: *ew.TeamID}
 		m[w.ID] = w
 	}
 	for _, mw := range resp.Me.Workspaces {
