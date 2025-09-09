@@ -178,8 +178,6 @@ type StageVariableConfig struct {
 // StageEnvironmentChanges 暂存环境变更
 func (c *Client) StageEnvironmentChanges(ctx context.Context, environmentID string, payload StageEnvironmentConfig) (string, error) {
 	var resp igql.EnvironmentStageChangesResponse
-	var plStr, _ = json.Marshal(payload)
-	fmt.Println(string(plStr))
 	if err := c.gqlClient.MutateInternal(ctx, igql.EnvironmentStageChangesMutation, map[string]any{
 		"environmentId": environmentID,
 		"payload":       payload,

@@ -23,6 +23,7 @@ type TemplateDeployOptions struct {
 	ProjectID     string
 	EnvironmentID string
 	TemplateCode  string
+	ServiceName   string            // 自定义服务名称（可选）
 	Variables     map[string]string // 用户提供的变量，支持 "Service.Key" 和 "Key" 格式
 }
 
@@ -47,13 +48,20 @@ func (c *Client) DeployTemplateWithConfig(ctx context.Context, opts TemplateDepl
 		return nil, err
 	}
 
-	// 4. 转换为 SerializedTemplateConfig
+	// 4. 设置自定义服务名称（如果提供）
+	if opts.ServiceName != "" {
+		if err := c.setCustomServiceName(&templateConfig, opts.ServiceName); err != nil {
+			return nil, err
+		}
+	}
+
+	// 5. 转换为 SerializedTemplateConfig
 	serializedConfig, err := c.convertToSerializedConfig(templateConfig)
 	if err != nil {
 		return nil, fmt.Errorf("转换模板配置失败: %w", err)
 	}
 
-	// 5. 部署模板
+	// 6. 部署模板
 	return c.DeployTemplate(ctx, opts.ProjectID, opts.EnvironmentID, templateDetail.Template.ID, serializedConfig)
 }
 
@@ -112,6 +120,21 @@ func (c *Client) processTemplateVariables(templateConfig *commands.DeserializedT
 				variable.Value = &value
 			}
 		}
+	}
+
+	return nil
+}
+
+// setCustomServiceName 设置自定义服务名称
+func (c *Client) setCustomServiceName(templateConfig *commands.DeserializedTemplateConfig, serviceName string) error {
+	if templateConfig.Services == nil {
+		return nil
+	}
+
+	// 对于单服务模板，直接设置第一个服务的名称
+	for _, service := range templateConfig.Services {
+		service.Name = serviceName
+		break // 只设置第一个服务，通常模板只有一个服务
 	}
 
 	return nil
