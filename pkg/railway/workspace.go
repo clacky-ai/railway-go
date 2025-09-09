@@ -10,7 +10,7 @@ import (
 type Workspace struct {
 	ID     string
 	Name   string
-	TeamID *string
+	TeamID string
 }
 
 // ServiceEnvironmentRef 服务在某环境的引用
@@ -50,10 +50,10 @@ func (c *Client) ListWorkspaces(ctx context.Context) ([]Workspace, error) {
 		m[w.ID] = w
 	}
 	for _, mw := range resp.Me.Workspaces {
-		var teamID *string
+		var teamID string
 		if mw.Team != nil {
 			id := mw.Team.ID
-			teamID = &id
+			teamID = id
 		}
 		w := Workspace{ID: mw.ID, Name: mw.Name, TeamID: teamID}
 		m[w.ID] = w

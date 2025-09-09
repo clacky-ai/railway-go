@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/railwayapp/cli/internal/commands"
 	"strings"
+
+	"github.com/railwayapp/cli/internal/commands"
 
 	gql "github.com/railwayapp/cli/internal/gql"
 )
